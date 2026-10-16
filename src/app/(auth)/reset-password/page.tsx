@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
       </CardContent>
 
       <CardFooter className="flex justify-center border-t border-border pt-4 text-xs text-muted-foreground">
-        <Link href="/auth/login" className="inline-flex items-center text-primary font-medium hover:underline">
+        <Link href="/login" className="inline-flex items-center text-primary font-medium hover:underline">
           <ArrowLeft className="w-3.5 h-3.5 mr-1" />
           Back to sign in
         </Link>

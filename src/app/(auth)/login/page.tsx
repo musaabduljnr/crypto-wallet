@@ -10,7 +10,7 @@ import { InlineNotice } from "@/components/feedback/inline-notice";
 import { loginAction, type ActionResponse } from "@/actions/auth.actions";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") || "/dashboard";
@@ -62,7 +62,7 @@ export default function LoginPage() {
                 Password
               </label>
               <Link
-                href="/auth/reset-password"
+                href="/reset-password"
                 className="text-xs text-primary hover:underline font-medium"
               >
                 Forgot password?
@@ -95,10 +95,24 @@ export default function LoginPage() {
 
       <CardFooter className="flex justify-center border-t border-border pt-4 text-xs text-muted-foreground">
         <span>Don't have an account? </span>
-        <Link href="/auth/register" className="ml-1 text-primary font-medium hover:underline">
+        <Link href="/register" className="ml-1 text-primary font-medium hover:underline">
           Create account
         </Link>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <Card className="border-border shadow-md animate-pulse p-8 text-center text-muted-foreground">
+          Loading authentication form...
+        </Card>
+      }
+    >
+      <LoginForm />
+    </React.Suspense>
   );
 }

@@ -10,12 +10,14 @@ import {
   Banknote,
   Download,
   Send,
+  ArrowUpRight,
   RefreshCw,
   History,
   Settings,
   LogOut,
   User,
 } from "lucide-react";
+import { NotificationBell } from "@/components/wallet/notification-bell";
 
 export default async function DashboardLayout({
   children,
@@ -40,10 +42,12 @@ export default async function DashboardLayout({
     { label: "Add Money", href: "/dashboard/add-money", icon: <Banknote className="w-4 h-4" /> },
     { label: "Receive", href: "/dashboard/receive", icon: <Download className="w-4 h-4" /> },
     { label: "Transfer", href: "/dashboard/transfer", icon: <Send className="w-4 h-4" /> },
+    { label: "Withdraw", href: "/dashboard/withdraw", icon: <ArrowUpRight className="w-4 h-4" /> },
     { label: "Swap", href: "/dashboard/swap", icon: <RefreshCw className="w-4 h-4" /> },
     { label: "History", href: "/dashboard/history", icon: <History className="w-4 h-4" /> },
     { label: "Settings", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
   ];
+
 
   return (
     <div className="min-h-screen flex bg-background text-foreground antialiased">
@@ -121,6 +125,7 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center space-x-3">
+            <NotificationBell />
             <Link href="/dashboard/settings" className="flex items-center space-x-2 text-xs text-muted-foreground hover:text-foreground">
               <span className="hidden sm:inline font-medium">{userEmail}</span>
             </Link>

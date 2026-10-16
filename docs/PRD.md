@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## Nigeria-First Managed Crypto Wallet Web Application (MVP)
+## Crypto Wallet Web Application (MVP)
 
 **Document Version:** 1.0.0  
 **Phase:** 01 — Product Requirements, Architecture & Technical Foundation  
@@ -11,7 +11,7 @@
 ## 1. Product Vision & Positioning
 
 ### 1.1 Product Vision
-To provide Nigerian individuals and emerging digital professionals with a secure, highly intuitive, compliant, and reliable financial bridge between the Nigerian Naira (NGN) and EVM-compatible digital assets. The platform eliminates the friction, volatility risks, and cognitive overhead typical of self-custodial wallets by offering an institutionally managed custodial experience backed by an immutable double-entry ledger.
+To providE individuals and emerging digital professionals with a secure, highly intuitive, compliant, and reliable financial bridge between the (USD) and EVM-compatible digital assets. The platform eliminates the friction, volatility risks, and cognitive overhead typical of self-custodial wallets by offering an institutionally managed custodial experience backed by an immutable double-entry ledger.
 
 ### 1.2 Target Market: Nigeria-First Assumptions
 Nigeria is one of the highest-volume cryptocurrency and peer-to-peer markets globally, driven by macroeconomic factors including currency volatility, high inflation, cross-border remittance demand, and a tech-savvy youth demographic. However, the market faces acute friction points:
@@ -21,7 +21,7 @@ Nigeria is one of the highest-volume cryptocurrency and peer-to-peer markets glo
 4. **Network Fee Volatility:** Extreme gas spikes on Ethereum L1 make small retail transactions economically infeasible.
 
 **Operating Assumptions for the MVP:**
-- **Primary Base Currency:** Nigerian Naira (NGN).
+- **Primary Base Currency:** USD).
 - **Primary Asset Focus:** Stablecoins (e.g., USDT or USDC) and major digital assets (e.g., ETH or native network token) on low-fee EVM networks to minimize transaction friction.
 - **Custody Model:** Managed custodial infrastructure. The platform owns customer relationships and internal ledgers, delegating on-chain custody and key management to an institutional provider.
 - **Regulatory Caution:** Strict compliance posture aligning with the Nigerian Securities and Exchange Commission (SEC) Regulatory Incubation Program / Accelerated Regulatory Incubation Program (ARIP) guidelines, and standard AML/CFT/KYC requirements.

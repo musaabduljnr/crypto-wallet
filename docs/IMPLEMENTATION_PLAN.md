@@ -38,17 +38,17 @@ This implementation plan establishes a strict, phased engineering progression. T
 | **Phase 03** | **Milestone 1** | Project Setup & Frontend Infrastructure | **COMPLETED** | `src/lib/config/env.ts`, `src/lib/logger.ts`, `src/lib/errors.ts` |
 | **Phase 04** | **Milestone 1** | Public Marketing Experience & Landing Page | **COMPLETED** | `src/app/page.tsx`, `Navbar.tsx`, `Footer.tsx` |
 | **Phase 05** | **Milestone 1** | Authentication, Session Management & Profiles | **COMPLETED** | `src/app/(auth)/*`, `(dashboard)/*`, `docs/PHASE_3_5_REPORT.md` |
-| **Phase 06** | Milestone 2 | PostgreSQL Schema & Double-Entry Ledger Engine | PENDING | Awaiting user approval to proceed |
-| **Phase 07** | Milestone 2 | Service Layer & Provider Adapters | PENDING | Awaiting user approval to proceed |
-| **Phase 08** | Milestone 2 | Wallet Dashboard & Portfolio Integration | PENDING | Awaiting user approval to proceed |
-| **Phase 09** | Milestone 2 | NGN Add Money (Korapay Virtual Accounts) | PENDING | Awaiting user approval to proceed |
-| **Phase 10** | Milestone 2 | Crypto Receive (Deposit Tracking & Webhooks) | PENDING | Awaiting user approval to proceed |
-| **Phase 11** | Milestone 3 | Internal Transfers & External Withdrawals | PENDING | Awaiting Milestone 2 completion |
-| **Phase 12** | Milestone 3 | Crypto Swap (RFQ Engine & Atomic Settlement) | PENDING | Awaiting Milestone 2 completion |
-| **Phase 13** | Milestone 3 | Transaction History, Receipts & Notifications | PENDING | Awaiting Milestone 2 completion |
-| **Phase 14** | Milestone 3 | E2E QA, Concurrency & Chaos Testing | PENDING | Awaiting Milestone 2 completion |
-| **Phase 15** | Milestone 3 | Security Audit & Compliance Hardening | PENDING | Awaiting Milestone 2 completion |
-| **Phase 16** | Milestone 3 | Production Deployment & Launch Runbooks | PENDING | Awaiting Milestone 2 completion |
+| **Phase 06** | **Milestone 2** | PostgreSQL Schema & Double-Entry Ledger Engine | **COMPLETED** | `supabase/migrations/00002_ledger_engine.sql`, `docs/LEDGER_IMPLEMENTATION.md` |
+| **Phase 07** | **Milestone 2** | Service Layer & Provider Adapters | **COMPLETED** | `src/lib/providers/*`, `src/lib/services/*`, `docs/PROVIDER_ADAPTERS.md` |
+| **Phase 08** | **Milestone 2** | Wallet Dashboard & Portfolio Integration | **COMPLETED** | `src/app/(dashboard)/page.tsx`, `portfolio.service.ts` |
+| **Phase 09** | **Milestone 2** | NGN Add Money (Korapay Virtual Accounts) | **COMPLETED** | `src/app/(dashboard)/add-money/page.tsx`, `funding.service.ts`, `docs/FUNDING_WEBHOOKS.md` |
+| **Phase 10** | **Milestone 2** | Crypto Receive (Deposit Tracking & Webhooks) | **COMPLETED** | `src/app/(dashboard)/receive/page.tsx`, `deposit.service.ts`, `docs/DEPOSIT_PROCESSING.md` |
+| **Phase 11** | **Milestone 3** | Internal Transfers & External Withdrawals | **COMPLETED** | `docs/INTERNAL_TRANSFERS.md`, `docs/WITHDRAWAL_WORKFLOW.md` |
+| **Phase 12** | **Milestone 3** | Crypto Swap (RFQ Engine & Atomic Settlement) | **COMPLETED** | `docs/SWAP_WORKFLOW.md` |
+| **Phase 13** | **Milestone 3** | Transaction History, Receipts & Notifications | **COMPLETED** | `docs/TRANSACTION_HISTORY.md`, `docs/NOTIFICATION_SYSTEM.md`, `docs/SECURITY_SETTINGS.md` |
+| **Phase 14** | **Milestone 4** | E2E QA, Concurrency & Chaos Testing | **COMPLETED** | `docs/FINAL_TEST_REPORT.md`, `tests/unit/financial-concurrency.test.ts` |
+| **Phase 15** | **Milestone 4** | Security Audit & Compliance Hardening | **COMPLETED** | `docs/SECURITY_REVIEW_FINAL.md`, `docs/COMPLIANCE_AND_PROVIDER_GATES.md` |
+| **Phase 16** | **Milestone 4** | Production Deployment & Launch Runbooks | **COMPLETED** | `docs/DEPLOYMENT_RUNBOOK.md`, `docs/INCIDENT_RESPONSE_RUNBOOK.md`, `docs/PRODUCTION_READINESS_CHECKLIST.md` |
 
 ---
 

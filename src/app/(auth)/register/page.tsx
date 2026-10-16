@@ -169,7 +169,7 @@ export default function RegisterPage() {
 
       <CardFooter className="flex justify-center border-t border-border pt-4 text-xs text-muted-foreground">
         <span>Already have an account? </span>
-        <Link href="/auth/login" className="ml-1 text-primary font-medium hover:underline">
+        <Link href="/login" className="ml-1 text-primary font-medium hover:underline">
           Sign in
         </Link>
       </CardFooter>

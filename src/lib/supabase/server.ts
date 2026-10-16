@@ -1,11 +1,11 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { config } from "@/lib/config/env";
 
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createSupabaseServerClient(
     config.supabase.url,
     config.supabase.anonKey,
     {
@@ -27,13 +27,15 @@ export async function createClient() {
   );
 }
 
+export const createServerClient = createClient;
+
 export function createAdminClient() {
   const serviceKey = config.supabase.serviceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for privileged server operations");
   }
 
-  return createServerClient(
+  return createSupabaseServerClient(
     config.supabase.url,
     serviceKey,
     {

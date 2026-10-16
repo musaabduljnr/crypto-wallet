@@ -43,7 +43,7 @@ export default function RegisterPage() {
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-bold">Create Free Account</CardTitle>
         <CardDescription>
-          Get your managed crypto wallet and instant Nigerian Naira funding bridge in minutes.
+          Get your managed crypto wallet and start sending, swapping, and receiving digital assets in minutes.
         </CardDescription>
       </CardHeader>
 
@@ -60,7 +60,7 @@ export default function RegisterPage() {
               label="First Name"
               name="firstName"
               type="text"
-              placeholder="Chidi"
+              placeholder="Alex"
               required
               leftAddon={<User className="w-4 h-4" />}
               error={state?.fieldErrors?.firstName}
@@ -69,7 +69,7 @@ export default function RegisterPage() {
               label="Last Name"
               name="lastName"
               type="text"
-              placeholder="Bakare"
+              placeholder="Morgan"
               required
               error={state?.fieldErrors?.lastName}
             />
@@ -80,7 +80,7 @@ export default function RegisterPage() {
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.ng"
+            placeholder="alex@example.com"
             required
             leftAddon={<Mail className="w-4 h-4" />}
             error={state?.fieldErrors?.email}
@@ -90,8 +90,8 @@ export default function RegisterPage() {
             label="Phone Number"
             name="phoneNumber"
             type="tel"
-            placeholder="08012345678"
-            helperText="Nigerian mobile format (+234 or 080...)"
+            placeholder="+12025551234"
+            helperText="International format, e.g. +12025551234"
             required
             leftAddon={<Phone className="w-4 h-4" />}
             error={state?.fieldErrors?.phoneNumber}

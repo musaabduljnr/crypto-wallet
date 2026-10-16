@@ -16,7 +16,6 @@ import {
   Layers,
   Banknote,
   CheckCircle2,
-  ChevronDown,
   Globe,
   Zap,
 } from "lucide-react";
@@ -36,12 +35,12 @@ export default function HomePage() {
             </div>
 
             <Heading as="h1" variant="hero" className="leading-[1.1] tracking-tight">
-              The Smartest Bridge Between <br className="hidden sm:inline" />
-              <span className="text-primary">Naira & Digital Dollars</span>
+              One Wallet for All Your <br className="hidden sm:inline" />
+              <span className="text-primary">Digital Assets</span>
             </Heading>
 
             <Text variant="body" className="max-w-2xl mx-auto text-base sm:text-lg text-muted-foreground leading-relaxed">
-              Hold, send, swap, and manage crypto without seed phrase anxiety or unpredictable gas spikes. Backed by bank-grade double-entry ledger integrity and licensed custody infrastructure.
+              Hold, send, swap, and manage crypto without seed phrase anxiety or unpredictable gas spikes. Backed by bank-grade double-entry ledger integrity and institutional custody infrastructure.
             </Text>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -57,23 +56,23 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Indicative Verified Asset Strip */}
+            {/* Supported Asset Strip */}
             <div className="pt-10 max-w-2xl mx-auto">
               <div className="grid grid-cols-3 gap-3 p-3 rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur-sm">
                 <div className="text-left px-3 py-1.5 border-r border-border">
-                  <span className="text-xs font-medium text-muted-foreground">NGN (Fiat)</span>
-                  <p className="font-mono font-bold text-sm text-foreground">₦1.00</p>
-                  <span className="text-[10px] text-emerald-600 font-medium">Bank Transfer</span>
+                  <span className="text-xs font-medium text-muted-foreground">USDT / USDC</span>
+                  <p className="font-mono font-bold text-sm text-foreground">~$1.00 USD</p>
+                  <span className="text-[10px] text-emerald-600 font-medium">Stablecoins</span>
                 </div>
                 <div className="text-left px-3 py-1.5 border-r border-border">
-                  <span className="text-xs font-medium text-muted-foreground">USDT (Stablecoin)</span>
-                  <p className="font-mono font-bold text-sm text-foreground">~$1.00 USD</p>
-                  <span className="text-[10px] text-emerald-600 font-medium">EVM Network</span>
-                </div>
-                <div className="text-left px-3 py-1.5">
                   <span className="text-xs font-medium text-muted-foreground">ETH (Utility)</span>
                   <p className="font-mono font-bold text-sm text-foreground">EVM Core</p>
-                  <span className="text-[10px] text-emerald-600 font-medium">Low Gas</span>
+                  <span className="text-[10px] text-emerald-600 font-medium">Low Gas Networks</span>
+                </div>
+                <div className="text-left px-3 py-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">BTC / SOL</span>
+                  <p className="font-mono font-bold text-sm text-foreground">Native L1</p>
+                  <span className="text-[10px] text-emerald-600 font-medium">On-Chain</span>
                 </div>
               </div>
             </div>
@@ -96,15 +95,15 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Card 1: Add Money */}
+              {/* Card 1: Fund Wallet */}
               <Card className="hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
                     <Banknote className="h-5 w-5" />
                   </div>
-                  <CardTitle>NGN Bank Top-up</CardTitle>
+                  <CardTitle>Fund Your Wallet</CardTitle>
                   <CardDescription>
-                    Fund your wallet directly with Nigerian Naira via dedicated virtual bank account transfers. Automatic, sub-minute crediting.
+                    Deposit supported assets using available payment methods for your region. Fiat on-ramp availability depends on your selected region and configured provider.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -117,7 +116,7 @@ export default function HomePage() {
                   </div>
                   <CardTitle>Receive On-Chain</CardTitle>
                   <CardDescription>
-                    Dedicated EVM deposit addresses for USDT and ETH with real-time confirmation tracking and block depth verification.
+                    Dedicated custodial deposit addresses for USDT, USDC, ETH, BTC, and SOL with real-time confirmation tracking and block depth verification.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -130,7 +129,7 @@ export default function HomePage() {
                   </div>
                   <CardTitle>Zero-Fee P2P Transfers</CardTitle>
                   <CardDescription>
-                    Send funds instantly to any registered user by email or tag. Settles off-chain with zero gas fees and atomic ledger execution.
+                    Send supported assets instantly to any registered user by email or tag. Settles off-chain with zero gas fees and atomic ledger execution.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -143,12 +142,12 @@ export default function HomePage() {
                   </div>
                   <CardTitle>External Withdrawals</CardTitle>
                   <CardDescription>
-                    Withdraw digital assets to any external EVM address with checksum validation, explicit fee breakdown, and transaction hash tracking.
+                    Withdraw digital assets to any compatible external address with checksum validation, explicit fee breakdown, and transaction hash tracking.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              {/* Card 5: Instant RFQ Swaps */}
+              {/* Card 5: Swaps */}
               <Card className="hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
@@ -161,15 +160,15 @@ export default function HomePage() {
                 </CardHeader>
               </Card>
 
-              {/* Card 6: Portfolio Management */}
+              {/* Card 6: Portfolio */}
               <Card className="hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
                     <Globe className="h-5 w-5" />
                   </div>
-                  <CardTitle>Portfolio & Security</CardTitle>
+                  <CardTitle>Portfolio &amp; Security</CardTitle>
                   <CardDescription>
-                    Unified portfolio net worth, privacy balance masking, active session revocation, and downloadable transaction statements.
+                    Unified portfolio net worth in USD, privacy balance masking, active session revocation, and downloadable transaction history.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -241,10 +240,10 @@ export default function HomePage() {
                   </div>
                   <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                     <span className="block text-[10px] uppercase font-semibold">Boundary Gate</span>
-                    <p className="font-semibold mt-0.5">Session-Aware Edge Middleware & CSRF Guards</p>
+                    <p className="font-semibold mt-0.5">Session-Aware Edge Middleware &amp; CSRF Guards</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/60 border border-border">
-                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Ledger & Persistence</span>
+                    <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Ledger &amp; Persistence</span>
                     <p className="font-semibold text-foreground mt-0.5">PostgreSQL Double-Entry Engine with Row-Level Security (RLS)</p>
                   </div>
                   <div className="p-3 rounded-lg bg-secondary border border-border">
@@ -265,7 +264,7 @@ export default function HomePage() {
                 Simple Onboarding
               </Badge>
               <Heading as="h2" variant="title">
-                Three Steps to Financial Freedom
+                Three Steps to Get Started
               </Heading>
               <Text variant="muted">
                 Get started in under two minutes with zero seed phrases to memorize.
@@ -277,9 +276,9 @@ export default function HomePage() {
                 <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center mx-auto md:mx-0 shadow-sm">
                   1
                 </div>
-                <h3 className="font-semibold text-base text-foreground">Create & Verify Account</h3>
+                <h3 className="font-semibold text-base text-foreground">Create &amp; Verify Account</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Sign up with your email and phone. Verify with a secure one-time code. Your custodial wallet accounts are created automatically.
+                  Sign up with your email and phone number. Verify with a secure one-time code. Your custodial wallet accounts are created automatically.
                 </p>
               </div>
 
@@ -287,9 +286,9 @@ export default function HomePage() {
                 <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center mx-auto md:mx-0 shadow-sm">
                   2
                 </div>
-                <h3 className="font-semibold text-base text-foreground">Fund with NGN or Crypto</h3>
+                <h3 className="font-semibold text-base text-foreground">Fund with Crypto</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Transfer Naira from your bank app using a dedicated virtual account, or receive USDT and ETH on supported EVM networks.
+                  Receive USDT, USDC, ETH, BTC, or SOL on supported networks using your dedicated custodial deposit address. Fiat funding availability depends on your region and configured provider.
                 </p>
               </div>
 
@@ -299,7 +298,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="font-semibold text-base text-foreground">Transact with Confidence</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Send funds to other platform users with zero fees, swap assets with 30-second rate guarantees, or withdraw externally anytime.
+                  Send funds to other platform users with zero fees, swap supported assets with 30-second rate guarantees, or withdraw to external wallets at any time.
                 </p>
               </div>
             </div>
@@ -311,7 +310,7 @@ export default function HomePage() {
           <Container size="md" className="space-y-10">
             <div className="text-center space-y-3">
               <Badge variant="outline" className="text-xs uppercase tracking-wider font-mono">
-                Questions & Answers
+                Questions &amp; Answers
               </Badge>
               <Heading as="h2" variant="title">
                 Frequently Asked Questions
@@ -333,9 +332,9 @@ export default function HomePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base font-semibold">How fast do NGN bank deposits credit?</CardTitle>
+                  <CardTitle className="text-base font-semibold">What currencies and assets are supported?</CardTitle>
                   <CardDescription className="text-xs leading-relaxed mt-1">
-                    NGN funding is powered by dedicated virtual bank accounts. Once you complete the transfer in your commercial banking app, our automated webhook listener credits your ledger account within 60 seconds.
+                    The wallet currently supports USDT, USDC, ETH, BTC, and SOL on compatible networks. Portfolio balances are displayed in USD by default. Fiat on-ramp availability varies by region and configured payment provider.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -344,7 +343,7 @@ export default function HomePage() {
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">What networks are supported for crypto deposits?</CardTitle>
                   <CardDescription className="text-xs leading-relaxed mt-1">
-                    The initial MVP supports verified EVM-compatible networks with low transaction fees (such as Polygon PoS and Arbitrum). Always verify the network selector on your Receive screen before broadcasting funds.
+                    The wallet supports verified EVM-compatible networks including Polygon PoS, Arbitrum, and Base, as well as Bitcoin and Solana. Always verify the network selector on your Receive screen before broadcasting funds.
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -365,10 +364,10 @@ export default function HomePage() {
         <section className="py-20 bg-gradient-to-t from-primary/10 via-background to-background text-center">
           <Container size="md" className="space-y-6">
             <Heading as="h2" variant="hero">
-              Ready to Bridge Your Finances?
+              Ready to Take Control of Your Digital Assets?
             </Heading>
             <Text variant="muted" className="max-w-lg mx-auto text-base">
-              Join thousands of digital professionals managing both Naira and crypto in one secure, compliant platform.
+              Manage, send, swap, and receive supported cryptocurrencies in one secure, transparent platform.
             </Text>
             <div className="pt-2">
               <Link href="/auth/register">

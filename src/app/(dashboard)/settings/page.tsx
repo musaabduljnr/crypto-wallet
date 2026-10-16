@@ -192,17 +192,17 @@ export default function SettingsPage() {
               <Input
                 label="Phone Number"
                 name="phoneNumber"
-                placeholder="08012345678"
-                defaultValue="08012345678"
+                placeholder="+1 (555) 000-0000"
+                defaultValue="+1 (555) 000-0000"
                 required
                 leftAddon={<Phone className="w-4 h-4" />}
                 error={profileState?.fieldErrors?.phoneNumber}
               />
               <Input
-                label="State of Residence (Nigeria)"
+                label="State / Province / Region"
                 name="stateOfResidence"
-                placeholder="Lagos State"
-                defaultValue="Lagos State"
+                placeholder="California, US"
+                defaultValue="California, US"
                 leftAddon={<MapPin className="w-4 h-4" />}
                 error={profileState?.fieldErrors?.stateOfResidence}
               />
@@ -253,7 +253,7 @@ export default function SettingsPage() {
               <div className="py-3 flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-foreground">In-App Funding & Deposit Alerts</p>
-                  <p className="text-muted-foreground">Get notified when NGN virtual bank credits or on-chain deposits confirm.</p>
+                  <p className="text-muted-foreground">Get notified when fiat deposits or on-chain crypto transfers confirm.</p>
                 </div>
                 <input
                   type="checkbox"
@@ -404,7 +404,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="text-base">Compliance & Tier Status</CardTitle>
           <CardDescription>
-            Verification status conforming to Nigerian VASP & SEC ARIP regulations.
+            Verification status conforming to regulatory and KYC/AML standards.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -414,7 +414,7 @@ export default function SettingsPage() {
               <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tier 1 Verified</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Tier 1 enables NGN virtual account deposits and internal transfers up to ₦50,000 daily limit. Higher limits unlock upon government-issued ID verification.
+              Tier 1 enables fiat deposits and internal transfers up to $5,000 daily limit. Higher limits unlock upon government-issued ID verification.
             </p>
           </div>
         </CardContent>

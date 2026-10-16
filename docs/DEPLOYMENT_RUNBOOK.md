@@ -16,7 +16,7 @@ Production secrets must never be committed to Git or shared across staging/previ
 # Application Environment
 NODE_ENV=production
 APP_ENV=production
-NEXT_PUBLIC_APP_URL=https://wallet.apexwallet.ng
+NEXT_PUBLIC_APP_URL=https://wallet.apexwallet.io
 
 # Supabase Managed Database & Auth
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co

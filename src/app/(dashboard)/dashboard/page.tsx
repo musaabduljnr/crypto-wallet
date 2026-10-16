@@ -22,9 +22,7 @@ export default async function DashboardPage() {
   const result = await getPortfolioAction();
   const portfolio = result.data;
 
-  const totalValueNgn = portfolio?.totalValueNgn ?? 0;
   const totalValueUsd = portfolio?.totalValueUsd ?? 0;
-  const usdToNgnRate = portfolio?.usdToNgnRate ?? 1550;
   const isStale = portfolio?.isStale ?? false;
   const priceTimestamp = portfolio?.priceTimestamp ? new Date(portfolio.priceTimestamp).toLocaleTimeString() : "Just now";
   const assets = portfolio?.assets ?? [];
@@ -73,23 +71,16 @@ export default async function DashboardPage() {
 
               <div className="flex items-baseline space-x-3">
                 <span className="text-3xl sm:text-4xl font-extrabold font-mono tracking-tight text-foreground">
-                  ₦{totalValueNgn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <span className="text-lg font-medium font-mono text-muted-foreground">
-                  ≈ ${totalValueUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ${totalValueUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                 </span>
               </div>
-
-              <p className="text-xs text-muted-foreground font-mono">
-                FX Benchmark Rate: 1 USD ≈ ₦{usdToNgnRate.toLocaleString()}
-              </p>
             </div>
 
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap items-center gap-3">
               <Link href="/dashboard/add-money">
                 <Button variant="primary" size="md" leftIcon={<Banknote className="w-4 h-4" />}>
-                  Add Money (NGN)
+                  Fund Wallet
                 </Button>
               </Link>
               <Link href="/dashboard/receive">
@@ -109,8 +100,8 @@ export default async function DashboardPage() {
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
               <Banknote className="h-5 w-5" />
             </div>
-            <h4 className="text-xs font-semibold text-foreground">Add Money</h4>
-            <span className="text-[10px] text-muted-foreground">NGN Bank Transfer</span>
+            <h4 className="text-xs font-semibold text-foreground">Fund Wallet</h4>
+            <span className="text-[10px] text-muted-foreground">Crypto Deposit</span>
           </Card>
         </Link>
 
@@ -165,9 +156,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="mt-2">
                     <span className="text-xl font-bold font-mono tabular-nums text-foreground">
-                      {asset.ticker === "NGN"
-                        ? `₦${parseFloat(asset.availableBalance).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
-                        : `${parseFloat(asset.availableBalance)} ${asset.ticker}`}
+                      {parseFloat(asset.availableBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 })} {asset.ticker}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground font-mono mt-0.5">
@@ -209,7 +198,7 @@ export default async function DashboardPage() {
               <EmptyState
                 icon={Clock}
                 title="No Transactions Yet"
-                description="Your double-entry ledger history is empty. Fund your wallet using NGN bank transfer or receive crypto to see posted entries here."
+                description="Your double-entry ledger history is empty. Fund your wallet or receive crypto to see posted entries here."
                 action={{
                   label: "Fund Wallet Now",
                   href: "/dashboard/add-money",

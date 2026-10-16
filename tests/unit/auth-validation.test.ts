@@ -59,6 +59,14 @@ describe("Authentication Validation Schemas", () => {
       expect(result.success).toBe(true);
     });
 
+    it("accepts +1 international US phone format", () => {
+      const result = registerSchema.safeParse({
+        ...validData,
+        phoneNumber: "+12025551234",
+      });
+      expect(result.success).toBe(true);
+    });
+
     it("rejects invalid phone numbers", () => {
       const result = registerSchema.safeParse({
         ...validData,

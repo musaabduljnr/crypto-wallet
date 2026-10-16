@@ -31,8 +31,8 @@ export const registerSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
-    .regex(/^(\+234|0)[789][01]\d{8}$/, {
-      message: "Please enter a valid Nigerian phone number (e.g., 08012345678 or +2348012345678)",
+    .regex(/^(\+?[1-9]\d{7,14}|0\d{9,10})$/, {
+      message: "Please enter a valid international phone number (e.g., +12025551234)",
     }),
   password: z
     .string()

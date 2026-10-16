@@ -76,7 +76,7 @@ export default function WithdrawPage() {
     if (!availableNets.includes(network)) {
       setNetwork(availableNets[0]);
     }
-  }, [asset, networkOptions]);
+  }, [asset, network]);
 
   // Fetch fee quote when asset or network changes
   useEffect(() => {

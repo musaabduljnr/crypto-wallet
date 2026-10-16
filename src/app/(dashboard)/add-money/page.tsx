@@ -16,14 +16,16 @@ import {
   ShieldAlert,
   ArrowRight,
   RefreshCw,
+  Globe,
 } from "lucide-react";
 
 export default function AddMoneyPage() {
-  const [amount, setAmount] = React.useState("50000");
+  const [amount, setAmount] = React.useState("500");
   const [copiedField, setCopiedField] = React.useState<string | null>(null);
   const [state, formAction, isPending] = React.useActionState(createFundingSessionAction, null);
 
-  const presets = ["5000", "20000", "50000", "100000", "250000"];
+  // Preset amounts in the fiat provider's configured currency
+  const presets = ["100", "250", "500", "1000", "5000"];
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -37,15 +39,22 @@ export default function AddMoneyPage() {
     <div className="space-y-6 max-w-3xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Add Money (NGN Bank Transfer)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Fund Your Wallet</h1>
           <p className="text-sm text-muted-foreground">
-            Generate a dedicated virtual bank account to fund your wallet with Nigerian Naira.
+            Deposit funds using your region&apos;s configured fiat payment provider.
           </p>
         </div>
         <Badge variant="outline" className="font-mono text-xs w-fit">
-          Instant Bank Transfer
+          Fiat On-Ramp
         </Badge>
       </div>
+
+      {/* Regional availability notice */}
+      <InlineNotice variant="warning" title="Regional Availability">
+        Fiat funding is currently available in sandbox mode via the configured regional payment provider.
+        Provider availability and supported currencies depend on your account&apos;s region. Crypto deposits
+        via the Receive screen are available globally.
+      </InlineNotice>
 
       {state?.error && (
         <InlineNotice variant="destructive" title="Deposit Error">
@@ -61,7 +70,8 @@ export default function AddMoneyPage() {
               <CardTitle>Enter Deposit Amount</CardTitle>
             </div>
             <CardDescription>
-              Specify how much you wish to deposit. Minimum deposit is ₦100.00; maximum single deposit is ₦5,000,000.00.
+              Specify the amount you wish to deposit using the configured fiat provider for your region.
+              Minimum and maximum limits are enforced by the active provider.
             </CardDescription>
           </CardHeader>
 
@@ -69,22 +79,18 @@ export default function AddMoneyPage() {
             <form id="funding-form" action={formAction} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1.5">
-                  Amount in Naira (NGN)
+                  Deposit Amount
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground font-mono font-bold">
-                    ₦
-                  </div>
                   <input
                     type="number"
                     name="amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    min="100"
-                    max="5000000"
+                    min="1"
                     required
-                    placeholder="50,000"
-                    className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-input bg-background font-mono text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="500"
+                    className="w-full px-4 py-2.5 rounded-lg border border-input bg-background font-mono text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
               </div>
@@ -102,21 +108,18 @@ export default function AddMoneyPage() {
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
-                    ₦{parseInt(p).toLocaleString()}
+                    {parseInt(p).toLocaleString("en-US")}
                   </button>
                 ))}
               </div>
 
-              {/* Fee Breakdown */}
-              <div className="p-3.5 rounded-lg bg-muted/40 border border-border text-xs space-y-1.5 font-mono">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Transfer Fee:</span>
-                  <span>₦50.00</span>
-                </div>
-                <div className="flex justify-between text-foreground font-bold pt-1 border-t border-border/50">
-                  <span>Total Payable:</span>
-                  <span>₦{(parseFloat(amount || "0") + 50).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</span>
-                </div>
+              {/* Info note */}
+              <div className="flex items-center space-x-2 text-xs text-muted-foreground p-3 rounded-lg bg-muted/40 border border-border">
+                <Globe className="w-4 h-4 shrink-0" />
+                <span>
+                  Amount is denominated in the currency supported by your active fiat provider.
+                  Fee breakdown is shown on the confirmation screen.
+                </span>
               </div>
             </form>
           </CardContent>
@@ -131,16 +134,16 @@ export default function AddMoneyPage() {
               isLoading={isPending}
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
-              {isPending ? "Generating Virtual Account..." : "Generate Virtual Account"}
+              {isPending ? "Generating Payment Details..." : "Generate Payment Details"}
             </Button>
           </CardFooter>
         </Card>
       ) : (
-        /* VIRTUAL ACCOUNT DETAILS VIEW */
+        /* FUNDING DETAILS VIEW */
         <div className="space-y-4">
           {order.isSandbox && (
             <InlineNotice variant="warning" title="Sandbox Mode Active">
-              This funding session is operating in Sandbox Testnet mode. Use your test environment or simulated webhook to verify payment settlement.
+              This funding session is operating in Sandbox / Test mode. Use your test environment or a simulated webhook to verify payment settlement. No real funds are transferred.
             </InlineNotice>
           )}
 
@@ -149,14 +152,14 @@ export default function AddMoneyPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-primary">
                   <Building2 className="w-5 h-5" />
-                  <CardTitle className="text-lg">Virtual Bank Account Details</CardTitle>
+                  <CardTitle className="text-lg">Payment Details</CardTitle>
                 </div>
                 <Badge variant="success" className="text-xs">
                   Active / Awaiting Transfer
                 </Badge>
               </div>
               <CardDescription>
-                Transfer exactly <span className="font-bold text-foreground font-mono">₦{parseFloat(order.totalNgn).toLocaleString("en-NG", { minimumFractionDigits: 2 })}</span> to the bank account below.
+                Complete your transfer using the payment details below.
               </CardDescription>
             </CardHeader>
 
@@ -166,7 +169,7 @@ export default function AddMoneyPage() {
                   {/* Account Number with Copy */}
                   <div className="p-4 rounded-xl bg-muted/50 border border-border flex items-center justify-between">
                     <div>
-                      <span className="text-xs text-muted-foreground block font-medium">Bank Account Number</span>
+                      <span className="text-xs text-muted-foreground block font-medium">Account Number</span>
                       <span className="text-2xl font-mono font-extrabold tracking-wider text-foreground">
                         {order.virtualAccount.accountNumber}
                       </span>
@@ -181,10 +184,10 @@ export default function AddMoneyPage() {
                     </Button>
                   </div>
 
-                  {/* Bank Name */}
+                  {/* Bank / Institution Name */}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="p-3 rounded-lg bg-card border border-border">
-                      <span className="text-xs text-muted-foreground block">Bank Name</span>
+                      <span className="text-xs text-muted-foreground block">Institution</span>
                       <span className="font-semibold text-foreground">{order.virtualAccount.bankName}</span>
                     </div>
                     <div className="p-3 rounded-lg bg-card border border-border">
@@ -220,7 +223,7 @@ export default function AddMoneyPage() {
 
               <div className="flex items-center space-x-2 text-xs text-muted-foreground pt-2">
                 <Clock className="w-4 h-4 text-muted-foreground/60" />
-                <span>Account expires in 60 minutes. Funds credit automatically upon bank settlement.</span>
+                <span>Payment session expires in 60 minutes. Funds credit automatically upon settlement confirmation.</span>
               </div>
             </CardContent>
 

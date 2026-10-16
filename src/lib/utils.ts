@@ -14,7 +14,7 @@ export function cn(...inputs: ClassValue[]): string {
  */
 export function formatCurrency(
   amount: string | number,
-  currency: 'NGN' | 'USD' | 'USDT' | 'ETH' = 'NGN'
+  currency: 'USD' | 'NGN' | 'GBP' | 'EUR' | 'USDT' | 'ETH' = 'USD'
 ): string {
   const str = String(amount).trim();
   if (!str || isNaN(Number(str))) return '0.00';

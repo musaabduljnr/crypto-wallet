@@ -27,7 +27,7 @@ import { SwapQuoteResult, SwapExecutionReceipt } from "@/lib/services/swap.servi
 
 export default function SwapPage() {
   const [sourceAsset, setSourceAsset] = useState("USDT");
-  const [destinationAsset, setDestinationAsset] = useState("NGN");
+  const [destinationAsset, setDestinationAsset] = useState("USDC");
   const [sourceAmount, setSourceAmount] = useState("");
 
   const [balances, setBalances] = useState<Record<string, string>>({});

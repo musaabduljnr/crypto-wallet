@@ -89,9 +89,19 @@ export async function executeWithdrawalAction(params: {
   destinationAddress: string;
   amount: string;
   idempotencyKey: string;
+  pin?: string;
 }): Promise<ActionResponse<WithdrawalExecutionResult>> {
   try {
     const user = await getAuthenticatedUser();
+
+    // Payment PIN validation if set on user profile/metadata
+    const expectedPin = user.user_metadata?.payment_pin;
+    if (expectedPin) {
+      if (!params.pin || params.pin.trim() !== expectedPin) {
+        return { success: false, error: "Invalid payment PIN. Please check your PIN and try again." };
+      }
+    }
+
     const result = await withdrawalService.executeWithdrawal({
       userId: user.id,
       asset: params.asset,

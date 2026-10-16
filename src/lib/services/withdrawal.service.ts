@@ -115,7 +115,25 @@ export class WithdrawalService {
 
     const supabase = await createServerClient();
 
-    // 4. Idempotency Check
+    // 4. Security Verification: 72-Hour New Device / Registration Cooldown Hold
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("created_at")
+      .eq("id", input.userId)
+      .maybeSingle();
+
+    if (profile?.created_at) {
+      const hoursSinceCreation = (Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceCreation < 72) {
+        throw new AppError(
+          "Can't withdraw on new device. Please wait for 72hrs security cooldown.",
+          "NEW_DEVICE_SECURITY_HOLD",
+          403
+        );
+      }
+    }
+
+    // 5. Idempotency Check
     const { data: existingReq } = await supabase
       .from("withdrawal_requests")
       .select("*")

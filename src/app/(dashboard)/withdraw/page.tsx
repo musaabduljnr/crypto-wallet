@@ -39,6 +39,7 @@ export default function WithdrawPage() {
   const [network, setNetwork] = useState("POLYGON");
   const [destinationAddress, setDestinationAddress] = useState("");
   const [amount, setAmount] = useState("");
+  const [pin, setPin] = useState("");
 
   const [feeQuote, setFeeQuote] = useState<WithdrawalFeeQuote | null>(null);
   const [loadingFee, setLoadingFee] = useState(false);
@@ -147,6 +148,12 @@ export default function WithdrawPage() {
 
   const handleExecuteWithdrawal = async () => {
     if (submitting) return;
+
+    if (!pin || pin.length !== 4) {
+      setErrorMsg("Please enter your 4-digit payment PIN to authorize this withdrawal.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg(null);
 
@@ -159,6 +166,7 @@ export default function WithdrawPage() {
         destinationAddress: destinationAddress.trim(),
         amount,
         idempotencyKey,
+        pin,
       });
 
       if (res.success && res.data) {
@@ -177,6 +185,7 @@ export default function WithdrawPage() {
   const handleReset = () => {
     setDestinationAddress("");
     setAmount("");
+    setPin("");
     setReceipt(null);
     setErrorMsg(null);
     setStep("INPUT");
@@ -426,6 +435,27 @@ export default function WithdrawPage() {
                 <span>Total Debit:</span>
                 <span className="text-primary">{totalDebit} {asset}</span>
               </div>
+            </div>
+
+            {/* 4-Digit Payment Authorization PIN */}
+            <div className="p-4 rounded-xl border border-border bg-muted/10 space-y-2">
+              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span>Payment Authorization PIN</span>
+                <span className="text-[10px] text-muted-foreground">Required to broadcast</span>
+              </label>
+              <Input
+                type="password"
+                maxLength={4}
+                placeholder="••••"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                className="text-center font-mono tracking-widest text-lg h-11"
+                id="withdrawal-pin-input"
+                autoComplete="off"
+              />
+              <p className="text-[11px] text-muted-foreground text-center">
+                Enter your 4-digit security PIN to authorize this fund reservation.
+              </p>
             </div>
 
             {errorMsg && (

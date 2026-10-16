@@ -48,7 +48,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages to /dashboard
-  if (pathname.startsWith("/auth/login") || pathname.startsWith("/auth/register")) {
+  if (
+    pathname.startsWith("/auth/login") ||
+    pathname.startsWith("/auth/register") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register")
+  ) {
     if (user) {
       const returnUrl = sanitizeReturnUrl(request.nextUrl.searchParams.get("returnUrl"));
       const url = request.nextUrl.clone();

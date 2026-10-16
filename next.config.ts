@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
+  rewrites: async () => [
+    {
+      source: "/auth/:path*",
+      destination: "/:path*",
+    },
+  ],
 };
 
 export default nextConfig;

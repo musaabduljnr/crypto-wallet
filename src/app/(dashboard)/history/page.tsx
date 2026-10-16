@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   History,
@@ -44,7 +44,7 @@ export default function HistoryPage() {
   const [selectedTxDetail, setSelectedTxDetail] = useState<Record<string, unknown> | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getUserTransactionsAction({
@@ -61,11 +61,11 @@ export default function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedType, selectedAsset, searchQuery]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [selectedType, selectedAsset]);
+  }, [fetchTransactions]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +172,7 @@ export default function HistoryPage() {
             id="history-asset-filter"
           >
             <option value="ALL">All Currencies</option>
-            <option value="NGN">NGN</option>
+            <option value="USD">USD</option>
             <option value="USDT">USDT</option>
             <option value="USDC">USDC</option>
             <option value="BTC">BTC</option>

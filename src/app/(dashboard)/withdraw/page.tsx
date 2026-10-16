@@ -25,6 +25,15 @@ import {
 import { getPortfolioAction } from "@/actions/wallet.actions";
 import { WithdrawalExecutionResult, WithdrawalFeeQuote } from "@/lib/services/withdrawal.service";
 
+// Hoisted to module scope so useEffect dependency array stays stable
+const networkOptions: Record<string, string[]> = {
+  USDT: ["POLYGON", "ARBITRUM", "BASE", "TRON", "ETHEREUM"],
+  USDC: ["POLYGON", "ARBITRUM", "BASE", "ETHEREUM", "SOLANA"],
+  BTC: ["BITCOIN"],
+  ETH: ["ETHEREUM", "ARBITRUM", "BASE"],
+  SOL: ["SOLANA"],
+};
+
 export default function WithdrawPage() {
   const [asset, setAsset] = useState("USDT");
   const [network, setNetwork] = useState("POLYGON");
@@ -41,15 +50,6 @@ export default function WithdrawPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<WithdrawalExecutionResult | null>(null);
-
-  // Network compatibility per asset
-  const networkOptions: Record<string, string[]> = {
-    USDT: ["POLYGON", "ARBITRUM", "BASE", "TRON", "ETHEREUM"],
-    USDC: ["POLYGON", "ARBITRUM", "BASE", "ETHEREUM", "SOLANA"],
-    BTC: ["BITCOIN"],
-    ETH: ["ETHEREUM", "ARBITRUM", "BASE"],
-    SOL: ["SOLANA"],
-  };
 
   useEffect(() => {
     async function loadBalances() {
@@ -76,7 +76,7 @@ export default function WithdrawPage() {
     if (!availableNets.includes(network)) {
       setNetwork(availableNets[0]);
     }
-  }, [asset]);
+  }, [asset, networkOptions]);
 
   // Fetch fee quote when asset or network changes
   useEffect(() => {

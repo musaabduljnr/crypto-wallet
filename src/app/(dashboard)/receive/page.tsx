@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -176,13 +177,14 @@ export default function ReceivePage() {
               {/* QR Code */}
               <div className="flex justify-center">
                 <div className="p-3 bg-white rounded-2xl border border-border shadow-sm">
-                  {/* eslint-disable-next-uri-content */}
-                  <img
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <Image
                     src={generateQrSvg(addressData.address)}
                     alt="Deposit Address QR Code"
                     width={180}
                     height={180}
                     className="rounded-lg"
+                    unoptimized
                   />
                 </div>
               </div>

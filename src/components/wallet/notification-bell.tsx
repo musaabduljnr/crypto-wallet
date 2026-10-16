@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Bell,
   CheckCheck,
@@ -27,7 +27,7 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getNotificationsAction({ unreadOnly });
@@ -40,14 +40,14 @@ export function NotificationBell() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [unreadOnly]);
 
   useEffect(() => {
     fetchNotifications();
     // Poll notifications every 45 seconds while open or mounted
     const interval = setInterval(fetchNotifications, 45000);
     return () => clearInterval(interval);
-  }, [unreadOnly]);
+  }, [fetchNotifications]);
 
   // Click outside listener
   useEffect(() => {

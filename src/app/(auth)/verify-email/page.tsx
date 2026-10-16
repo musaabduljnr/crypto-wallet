@@ -18,7 +18,7 @@ export default function VerifyEmailPage() {
 
       <CardContent className="space-y-4">
         <div className="p-3.5 rounded-xl bg-muted/60 border border-border text-xs text-muted-foreground leading-relaxed">
-          Didn't receive the email? Check your spam or junk folder, or click below to return to sign in once confirmed.
+          Didn&apos;t receive the email? Check your spam or junk folder, or click below to return to sign in once confirmed.
         </div>
 
         <Link href="/auth/login" className="block w-full">

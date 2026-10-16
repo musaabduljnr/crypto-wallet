@@ -94,7 +94,7 @@ function LoginForm() {
       </CardContent>
 
       <CardFooter className="flex justify-center border-t border-border pt-4 text-xs text-muted-foreground">
-        <span>Don't have an account? </span>
+        <span>Don&apos;t have an account? </span>
         <Link href="/register" className="ml-1 text-primary font-medium hover:underline">
           Create account
         </Link>

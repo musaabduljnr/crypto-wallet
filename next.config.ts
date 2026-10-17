@@ -21,6 +21,34 @@ const nextConfig: NextConfig = {
       source: "/auth/:path*",
       destination: "/:path*",
     },
+    {
+      source: "/dashboard/transfer",
+      destination: "/transfer",
+    },
+    {
+      source: "/dashboard/withdraw",
+      destination: "/withdraw",
+    },
+    {
+      source: "/dashboard/receive",
+      destination: "/receive",
+    },
+    {
+      source: "/dashboard/swap",
+      destination: "/swap",
+    },
+    {
+      source: "/dashboard/add-money",
+      destination: "/add-money",
+    },
+    {
+      source: "/dashboard/history",
+      destination: "/history",
+    },
+    {
+      source: "/dashboard/settings",
+      destination: "/settings",
+    },
   ],
 };
 

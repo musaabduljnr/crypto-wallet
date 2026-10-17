@@ -544,7 +544,7 @@ export default function WithdrawPage() {
               <Button type="button" onClick={handleReset} variant="outline" className="flex-1">
                 New Withdrawal
               </Button>
-              <Link href="/dashboard/history" className="flex-1">
+              <Link href="/history" className="flex-1">
                 <Button type="button" className="w-full">
                   View in History
                 </Button>

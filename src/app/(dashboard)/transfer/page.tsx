@@ -462,7 +462,7 @@ export default function TransferPage() {
               <Button type="button" onClick={handleReset} variant="outline" className="flex-1">
                 Make Another Transfer
               </Button>
-              <Link href="/dashboard/history" className="flex-1">
+              <Link href="/history" className="flex-1">
                 <Button type="button" className="w-full">
                   View in History
                 </Button>

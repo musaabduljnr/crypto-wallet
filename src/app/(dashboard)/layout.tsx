@@ -39,13 +39,13 @@ export default async function DashboardLayout({
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { label: "Add Money", href: "/dashboard/add-money", icon: <Banknote className="w-4 h-4" /> },
-    { label: "Receive", href: "/dashboard/receive", icon: <Download className="w-4 h-4" /> },
-    { label: "Transfer", href: "/dashboard/transfer", icon: <Send className="w-4 h-4" /> },
-    { label: "Withdraw", href: "/dashboard/withdraw", icon: <ArrowUpRight className="w-4 h-4" /> },
-    { label: "Swap", href: "/dashboard/swap", icon: <RefreshCw className="w-4 h-4" /> },
-    { label: "History", href: "/dashboard/history", icon: <History className="w-4 h-4" /> },
-    { label: "Settings", href: "/dashboard/settings", icon: <Settings className="w-4 h-4" /> },
+    { label: "Add Money", href: "/add-money", icon: <Banknote className="w-4 h-4" /> },
+    { label: "Receive", href: "/receive", icon: <Download className="w-4 h-4" /> },
+    { label: "Transfer", href: "/transfer", icon: <Send className="w-4 h-4" /> },
+    { label: "Withdraw", href: "/withdraw", icon: <ArrowUpRight className="w-4 h-4" /> },
+    { label: "Swap", href: "/swap", icon: <RefreshCw className="w-4 h-4" /> },
+    { label: "History", href: "/history", icon: <History className="w-4 h-4" /> },
+    { label: "Settings", href: "/settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
 
@@ -126,7 +126,7 @@ export default async function DashboardLayout({
 
           <div className="flex items-center space-x-3">
             <NotificationBell />
-            <Link href="/dashboard/settings" className="flex items-center space-x-2 text-xs text-muted-foreground hover:text-foreground">
+            <Link href="/settings" className="flex items-center space-x-2 text-xs text-muted-foreground hover:text-foreground">
               <span className="hidden sm:inline font-medium">{userEmail}</span>
             </Link>
           </div>
@@ -144,19 +144,19 @@ export default async function DashboardLayout({
           <LayoutDashboard className="w-4 h-4" />
           <span className="text-[10px] mt-1">Home</span>
         </Link>
-        <Link href="/dashboard/transfer" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/transfer" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
           <Send className="w-4 h-4" />
           <span className="text-[10px] mt-1">Transfer</span>
         </Link>
-        <Link href="/dashboard/swap" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/swap" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
           <RefreshCw className="w-4 h-4" />
           <span className="text-[10px] mt-1">Swap</span>
         </Link>
-        <Link href="/dashboard/history" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/history" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
           <History className="w-4 h-4" />
           <span className="text-[10px] mt-1">History</span>
         </Link>
-        <Link href="/dashboard/settings" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/settings" className="flex flex-col items-center py-1 text-xs text-muted-foreground hover:text-foreground">
           <Settings className="w-4 h-4" />
           <span className="text-[10px] mt-1">Settings</span>
         </Link>

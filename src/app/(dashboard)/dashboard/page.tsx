@@ -78,12 +78,12 @@ export default async function DashboardPage() {
 
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap items-center gap-3">
-              <Link href="/dashboard/add-money">
+              <Link href="/add-money">
                 <Button variant="primary" size="md" leftIcon={<Banknote className="w-4 h-4" />}>
                   Fund Wallet
                 </Button>
               </Link>
-              <Link href="/dashboard/receive">
+              <Link href="/receive">
                 <Button variant="secondary" size="md" leftIcon={<Download className="w-4 h-4" />}>
                   Receive Crypto
                 </Button>
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
 
       {/* QUICK ACTIONS BAR */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link href="/dashboard/add-money">
+        <Link href="/add-money">
           <Card className="hover:border-primary/50 hover:bg-muted/30 transition-all text-center p-4">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
               <Banknote className="h-5 w-5" />
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/receive">
+        <Link href="/receive">
           <Card className="hover:border-primary/50 hover:bg-muted/30 transition-all text-center p-4">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
               <Download className="h-5 w-5" />
@@ -115,23 +115,23 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/transfer">
+        <Link href="/transfer">
           <Card className="hover:border-primary/50 hover:bg-muted/30 transition-all text-center p-4">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
               <Send className="h-5 w-5" />
             </div>
             <h4 className="text-xs font-semibold text-foreground">Transfer</h4>
-            <span className="text-[10px] text-muted-foreground">Milestone 3 Stub</span>
+            <span className="text-[10px] text-muted-foreground">Peer-to-Peer</span>
           </Card>
         </Link>
 
-        <Link href="/dashboard/swap">
+        <Link href="/swap">
           <Card className="hover:border-primary/50 hover:bg-muted/30 transition-all text-center p-4">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
               <RefreshCw className="h-5 w-5" />
             </div>
             <h4 className="text-xs font-semibold text-foreground">Swap Assets</h4>
-            <span className="text-[10px] text-muted-foreground">Milestone 3 Stub</span>
+            <span className="text-[10px] text-muted-foreground">Instant RFQ</span>
           </Card>
         </Link>
       </div>
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
           <Heading as="h3" variant="section">
             Recent Ledger Activity
           </Heading>
-          <Link href="/dashboard/history" className="text-xs text-primary font-medium hover:underline">
+          <Link href="/history" className="text-xs text-primary font-medium hover:underline">
             View full history →
           </Link>
         </div>
@@ -201,7 +201,7 @@ export default async function DashboardPage() {
                 description="Your double-entry ledger history is empty. Fund your wallet or receive crypto to see posted entries here."
                 action={{
                   label: "Fund Wallet Now",
-                  href: "/dashboard/add-money",
+                  href: "/add-money",
                 }}
               />
             </CardContent>

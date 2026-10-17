@@ -112,6 +112,17 @@ export class TransferService {
       throw new AppError("Self-transfers are not permitted", "SELF_TRANSFER_PROHIBITED", 400);
     }
 
+    // Server-enforced account restriction check
+    const { checkUserActiveRestriction } = await import("@/lib/admin/restrictions");
+    const isRestricted = await checkUserActiveRestriction(input.senderId, "INTERNAL_TRANSFER");
+    if (isRestricted) {
+      throw new AppError(
+        "Account restriction active: Internal transfers are temporarily disabled for this account.",
+        "ACCOUNT_RESTRICTED",
+        403
+      );
+    }
+
     const supabase = await createServerClient();
 
     // Idempotency check: see if this transaction was already posted

@@ -44,6 +44,17 @@ export class FundingService {
     const idempotencyKey = input.idempotencyKey || `FUND-${input.userId.slice(0, 8)}-${Date.now()}`;
     const adapter = providers.getFiatFundingAdapter();
 
+    // Server-enforced account restriction check
+    const { checkUserActiveRestriction } = await import("@/lib/admin/restrictions");
+    const isFundingRestricted = await checkUserActiveRestriction(input.userId, "FIAT_FUNDING");
+    if (isFundingRestricted) {
+      throw new AppError(
+        "Account restriction active: Fiat funding is temporarily disabled for this account.",
+        "ACCOUNT_RESTRICTED",
+        403
+      );
+    }
+
     // Check if duplicate funding session already exists
     const supabase = await createServerClient();
     const { data: existingSession } = await supabase

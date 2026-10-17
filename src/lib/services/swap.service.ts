@@ -136,6 +136,17 @@ export class SwapService {
    * Rejects expired quotes, verifies available balance, and executes double-entry settlement.
    */
   async executeSwap(input: ExecuteSwapInput): Promise<SwapExecutionReceipt> {
+    // Server-enforced account restriction check
+    const { checkUserActiveRestriction } = await import("@/lib/admin/restrictions");
+    const isSwapRestricted = await checkUserActiveRestriction(input.userId, "SWAP");
+    if (isSwapRestricted) {
+      throw new AppError(
+        "Account restriction active: Asset conversions and swaps are temporarily disabled for this account.",
+        "ACCOUNT_RESTRICTED",
+        403
+      );
+    }
+
     const supabase = await createServerClient();
 
     // 1. Fetch quote

@@ -133,6 +133,17 @@ export class WithdrawalService {
       }
     }
 
+    // Server-enforced account restriction check
+    const { checkUserActiveRestriction } = await import("@/lib/admin/restrictions");
+    const isWithdrawalRestricted = await checkUserActiveRestriction(input.userId, "EXTERNAL_WITHDRAWAL");
+    if (isWithdrawalRestricted) {
+      throw new AppError(
+        "Account restriction active: External withdrawals are temporarily suspended for this account.",
+        "ACCOUNT_RESTRICTED",
+        403
+      );
+    }
+
     // 5. Idempotency Check
     const { data: existingReq } = await supabase
       .from("withdrawal_requests")

@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { recordAdminAuditLog } from "./audit";
 import { AuthenticatedStaff } from "./auth";
@@ -63,7 +63,7 @@ export async function requestBalanceAdjustment(
     throw new AppError(`Unsupported asset: ${ticker}`, "INVALID_ASSET", 400);
   }
 
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   // Verify target user exists
   const { data: targetUser, error: userErr } = await supabase
@@ -144,7 +144,7 @@ export async function reviewBalanceAdjustment(
   staff: AuthenticatedStaff,
   input: ReviewAdjustmentInput
 ): Promise<{ status: AdjustmentStatus; ledgerTxId?: string }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   // 1. Fetch adjustment record with row lock
   const { data: record, error: fetchErr } = await supabase
@@ -248,7 +248,7 @@ export async function listBalanceAdjustments(params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ adjustments: BalanceAdjustmentRecord[]; total: number }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   let query = supabase
     .from("balance_adjustments")
     .select("*, auth_users:user_id(email)", { count: "exact" });

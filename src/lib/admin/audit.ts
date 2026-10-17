@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { StaffRole } from "./permissions";
 
@@ -21,7 +21,7 @@ export interface RecordAdminAuditInput {
  */
 export async function recordAdminAuditLog(input: RecordAdminAuditInput): Promise<void> {
   try {
-    const supabase = await createServerClient();
+    const supabase = createAdminClient();
 
     // Sanitize details to guarantee no secrets or private keys are recorded
     const sanitizedDetails = { ...(input.details || {}) };
@@ -77,7 +77,7 @@ export async function listAdminAuditLogs(params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ logs: AdminAuditLogRecord[]; total: number }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const limit = params?.limit || 50;
   const offset = params?.offset || 0;
 

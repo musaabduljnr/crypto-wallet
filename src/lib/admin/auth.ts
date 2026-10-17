@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { StaffRole, AdminPermission, hasPermission, getRolePermissions } from "./permissions";
 
@@ -13,8 +13,31 @@ export interface AuthenticatedStaff {
 }
 
 /**
+ * Checks if a given user ID belongs to an active staff member without throwing.
+ */
+export async function checkIsStaff(userId?: string): Promise<{ isStaff: boolean; role?: StaffRole }> {
+  if (!userId) return { isStaff: false };
+  try {
+    const adminSupabase = createAdminClient();
+    const { data: staff } = await adminSupabase
+      .from("staff_users")
+      .select("role, is_active")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (staff && staff.is_active) {
+      return { isStaff: true, role: staff.role as StaffRole };
+    }
+  } catch {
+    // Fall through on error
+  }
+  return { isStaff: false };
+}
+
+/**
  * Resolves the authenticated user and verifies active staff membership.
- * Never trusts client headers or query parameters.
+ * Authenticates user session cryptographically via auth.getUser(), then
+ * queries staff_users via service role to bypass PostgreSQL RLS recursion.
  * Throws 401 if unauthenticated, 403 if user is not an active staff member.
  */
 export async function getAuthenticatedStaff(): Promise<AuthenticatedStaff> {
@@ -25,8 +48,9 @@ export async function getAuthenticatedStaff(): Promise<AuthenticatedStaff> {
     throw new AppError("Authentication required to access administrative resources", "UNAUTHENTICATED", 401);
   }
 
-  // Resolve staff role record from database
-  const { data: staff, error: staffErr } = await supabase
+  // Resolve staff role record from database using service role to prevent RLS policy recursion
+  const adminSupabase = createAdminClient();
+  const { data: staff, error: staffErr } = await adminSupabase
     .from("staff_users")
     .select("role, is_active")
     .eq("id", user.id)
@@ -37,7 +61,7 @@ export async function getAuthenticatedStaff(): Promise<AuthenticatedStaff> {
   }
 
   // Resolve user profile for display identity
-  const { data: profile } = await supabase
+  const { data: profile } = await adminSupabase
     .from("user_profiles")
     .select("first_name, last_name")
     .eq("id", user.id)
@@ -48,8 +72,8 @@ export async function getAuthenticatedStaff(): Promise<AuthenticatedStaff> {
   return {
     id: user.id,
     email: user.email || "staff@apexwallet.io",
-    firstName: profile?.first_name || "Staff",
-    lastName: profile?.last_name || "",
+    firstName: profile?.first_name || "Super",
+    lastName: profile?.last_name || "Admin",
     role,
     permissions: getRolePermissions(role),
     isActive: staff.is_active,

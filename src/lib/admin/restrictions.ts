@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { recordAdminAuditLog } from "./audit";
 import { AuthenticatedStaff } from "./auth";
@@ -53,7 +53,7 @@ export async function checkUserActiveRestriction(
   userId: string,
   restrictionType: RestrictionType
 ): Promise<boolean> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("check_user_active_restriction", {
     p_user_id: userId,
     p_restriction_type: restrictionType,
@@ -83,7 +83,7 @@ export async function applyAccountRestriction(
   staff: AuthenticatedStaff,
   input: ApplyRestrictionInput
 ): Promise<AccountRestrictionRecord> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   // Validate target user exists
   const { data: targetProfile, error: profileErr } = await supabase
@@ -154,7 +154,7 @@ export async function liftAccountRestriction(
   staff: AuthenticatedStaff,
   input: LiftRestrictionInput
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data: existing, error: fetchErr } = await supabase
     .from("account_restrictions")
@@ -204,7 +204,7 @@ export async function liftAccountRestriction(
  * Retrieves all restrictions for a given user.
  */
 export async function getUserRestrictions(userId: string): Promise<AccountRestrictionRecord[]> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("account_restrictions")
     .select("*")
@@ -236,7 +236,7 @@ export async function listAllRestrictions(params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ restrictions: AccountRestrictionRecord[]; total: number }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   let query = supabase
     .from("account_restrictions")
     .select("*, auth_users:user_id(email)", { count: "exact" });

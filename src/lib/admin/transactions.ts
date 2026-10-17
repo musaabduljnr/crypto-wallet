@@ -49,7 +49,7 @@ export async function listAdminTransactions(params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ transactions: AdminTransactionListItem[]; total: number }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const limit = params?.limit || 50;
   const offset = params?.offset || 0;
 
@@ -95,7 +95,7 @@ export async function listAdminTransactions(params?: {
  * Retrieves full transaction investigation details including double-entry ledger entries.
  */
 export async function getAdminTransactionDetails(transactionId: string): Promise<AdminTransactionDetail> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data: tx, error: txErr } = await supabase
     .from("ledger_transactions")

@@ -48,7 +48,13 @@ export async function loginAction(
     }
 
     logger.info("User signed in successfully", { userId: data.user.id });
-    const redirectUrl = sanitizeReturnUrl(rawReturnUrl, "/dashboard");
+
+    // If authenticating user is active staff and no custom returnUrl specified, route directly to /admin
+    const { checkIsStaff } = await import("@/lib/admin/auth");
+    const { isStaff } = await checkIsStaff(data.user.id);
+    const defaultDestination = isStaff ? "/admin" : "/dashboard";
+
+    const redirectUrl = sanitizeReturnUrl(rawReturnUrl, defaultDestination);
     return { success: true, data: { redirectUrl } };
   } catch (err) {
     logger.error("Unexpected error in loginAction", err);

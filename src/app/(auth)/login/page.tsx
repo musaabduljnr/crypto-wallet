@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InlineNotice } from "@/components/feedback/inline-notice";
 import { loginAction, type ActionResponse } from "@/actions/auth.actions";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -93,11 +93,22 @@ function LoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="flex justify-center border-t border-border pt-4 text-xs text-muted-foreground">
-        <span>Don&apos;t have an account? </span>
-        <Link href="/register" className="ml-1 text-primary font-medium hover:underline">
-          Create account
-        </Link>
+      <CardFooter className="flex flex-col space-y-3 border-t border-border pt-4 text-xs text-muted-foreground text-center">
+        <div>
+          <span>Don&apos;t have an account? </span>
+          <Link href="/register" className="ml-1 text-primary font-medium hover:underline">
+            Create account
+          </Link>
+        </div>
+        <div className="pt-2 border-t border-border/50 w-full flex items-center justify-center">
+          <Link
+            href="/admin/login"
+            className="text-[11px] font-mono text-muted-foreground hover:text-foreground flex items-center space-x-1.5 transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Super Admin & Operations Portal →</span>
+          </Link>
+        </div>
       </CardFooter>
     </Card>
   );

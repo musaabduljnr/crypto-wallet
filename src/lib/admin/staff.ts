@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { StaffRole } from "./permissions";
 import { AuthenticatedStaff } from "./auth";
@@ -20,7 +20,7 @@ export interface StaffMemberRecord {
  * Lists all staff members with profile details.
  */
 export async function listStaffMembers(): Promise<StaffMemberRecord[]> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("staff_users")
@@ -49,7 +49,7 @@ export async function updateStaffRole(
   staff: AuthenticatedStaff,
   params: { targetUserId: string; newRole: StaffRole }
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   // 1. Fetch target staff
   const { data: target, error: targetErr } = await supabase
@@ -114,7 +114,7 @@ export async function toggleStaffStatus(
   staff: AuthenticatedStaff,
   params: { targetUserId: string; isActive: boolean }
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data: target, error: targetErr } = await supabase
     .from("staff_users")
@@ -173,7 +173,7 @@ export async function assignStaffMember(
   staff: AuthenticatedStaff,
   params: { email: string; role: StaffRole }
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   // Find target user by email
   const { data: userRecord, error: userErr } = await supabase

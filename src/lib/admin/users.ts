@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { recordAdminAuditLog } from "./audit";
 import { AuthenticatedStaff } from "./auth";
@@ -71,7 +71,7 @@ export async function listAdminUsers(params?: {
   limit?: number;
   offset?: number;
 }): Promise<{ users: AdminUserListItem[]; total: number }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const limit = params?.limit || 25;
   const offset = params?.offset || 0;
 
@@ -134,7 +134,7 @@ export async function listAdminUsers(params?: {
  * Returns comprehensive administrative detail for an individual user.
  */
 export async function getAdminUserDetails(userId: string): Promise<AdminUserDetails> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   // 1. Profile & auth data
   const { data: profile, error: profileErr } = await supabase
@@ -192,7 +192,7 @@ export async function createAdminUser(
   staff: AuthenticatedStaff,
   input: CreateAdminUserInput
 ): Promise<{ userId: string; email: string }> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const tempPassword = input.password || `ApexTemp${Math.random().toString(36).slice(2, 8)}!2026`;
 
@@ -250,7 +250,7 @@ export async function updateAdminUserProfile(
   staff: AuthenticatedStaff,
   input: UpdateAdminUserProfileInput
 ): Promise<void> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data: existing, error: fetchErr } = await supabase
     .from("user_profiles")
@@ -313,7 +313,7 @@ export async function addAdminNote(
     isConfidential?: boolean;
   }
 ): Promise<AdminNoteRecord> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("admin_notes")
@@ -362,7 +362,7 @@ export async function getAdminNotes(
   targetEntityType: string,
   targetEntityId: string
 ): Promise<AdminNoteRecord[]> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("admin_notes")
     .select("*")

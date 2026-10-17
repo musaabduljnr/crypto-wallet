@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/errors";
 import { recordAdminAuditLog } from "./audit";
 import { AuthenticatedStaff } from "./auth";
@@ -15,7 +15,7 @@ export interface PlatformSettingRecord {
  * Returns all platform operational settings.
  */
 export async function getPlatformSettings(): Promise<PlatformSettingRecord[]> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("platform_settings")
     .select("*")
@@ -40,7 +40,7 @@ export async function updatePlatformSetting(
   key: string,
   value: Record<string, unknown>
 ): Promise<PlatformSettingRecord> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const { data: existing, error: findErr } = await supabase
     .from("platform_settings")

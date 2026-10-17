@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export interface AdminDashboardStats {
   totalUsers: number;
@@ -26,7 +26,7 @@ export interface AdminDashboardStats {
  * Calculates authoritative dashboard metrics derived directly from the database.
  */
 export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
-  const supabase = await createServerClient();
+  const supabase = createAdminClient();
 
   const [
     { count: totalUsers },

@@ -237,27 +237,31 @@ export async function listAllRestrictions(params?: {
   offset?: number;
 }): Promise<{ restrictions: AccountRestrictionRecord[]; total: number }> {
   const supabase = createAdminClient();
-  let query = supabase
-    .from("account_restrictions")
-    .select("*, auth_users:user_id(email)", { count: "exact" });
-
-  if (params?.status) {
-    query = query.eq("status", params.status);
-  }
-
   const limit = params?.limit || 50;
   const offset = params?.offset || 0;
 
-  const { data, count, error } = await query
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const [
+    { data, count, error },
+    { data: authUsersData }
+  ] = await Promise.all([
+    (() => {
+      let query = supabase.from("account_restrictions").select("*", { count: "exact" });
+      if (params?.status) {
+        query = query.eq("status", params.status);
+      }
+      return query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    })(),
+    supabase.auth.admin.listUsers({ perPage: 1000 })
+  ]);
 
   if (error || !data) return { restrictions: [], total: 0 };
+
+  const emailMap = new Map((authUsersData?.users || []).map((u) => [u.id, u.email || ""]));
 
   const restrictions: AccountRestrictionRecord[] = data.map((r: any) => ({
     id: r.id,
     userId: r.user_id,
-    userEmail: r.auth_users?.email || undefined,
+    userEmail: emailMap.get(r.user_id) || undefined,
     restrictionType: r.restriction_type,
     reasonCategory: r.reason_category,
     internalExplanation: r.internal_explanation,

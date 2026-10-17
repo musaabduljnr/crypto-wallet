@@ -75,13 +75,25 @@ export async function listAdminUsers(params?: {
   const limit = params?.limit || 25;
   const offset = params?.offset || 0;
 
-  let query = supabase
-    .from("user_profiles")
-    .select("*, auth_users:id(email, created_at)", { count: "exact" });
+  // 1. Fetch auth users to build email map and support search by email
+  const { data: authUsersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const emailMap = new Map((authUsersData?.users || []).map((u) => [u.id, u.email || ""]));
+
+  let query = supabase.from("user_profiles").select("*", { count: "exact" });
 
   if (params?.search) {
     const s = params.search.trim();
-    query = query.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,phone_number.ilike.%${s}%`);
+    const matchingEmailIds = (authUsersData?.users || [])
+      .filter((u) => u.email?.toLowerCase().includes(s.toLowerCase()))
+      .map((u) => u.id);
+
+    if (matchingEmailIds.length > 0) {
+      query = query.or(
+        `first_name.ilike.%${s}%,last_name.ilike.%${s}%,phone_number.ilike.%${s}%,id.in.(${matchingEmailIds.join(",")})`
+      );
+    } else {
+      query = query.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,phone_number.ilike.%${s}%`);
+    }
   }
 
   const { data, count, error } = await query
@@ -90,7 +102,7 @@ export async function listAdminUsers(params?: {
 
   if (error || !data) return { users: [], total: 0 };
 
-  // Fetch active restrictions for these users in batch
+  // 2. Fetch active restrictions for these users in batch
   const userIds = data.map((d) => d.id);
   const { data: activeRestrictions } = await supabase
     .from("account_restrictions")
@@ -116,7 +128,7 @@ export async function listAdminUsers(params?: {
 
     return {
       id: u.id,
-      email: u.auth_users?.email || "user@apexwallet.io",
+      email: emailMap.get(u.id) || "user@apexwallet.io",
       firstName: u.first_name || "",
       lastName: u.last_name || "",
       phoneNumber: u.phone_number || "",
@@ -137,11 +149,13 @@ export async function getAdminUserDetails(userId: string): Promise<AdminUserDeta
   const supabase = createAdminClient();
 
   // 1. Profile & auth data
-  const { data: profile, error: profileErr } = await supabase
-    .from("user_profiles")
-    .select("*, auth_users:id(email)")
-    .eq("id", userId)
-    .maybeSingle();
+  const [
+    { data: profile, error: profileErr },
+    { data: authUser }
+  ] = await Promise.all([
+    supabase.from("user_profiles").select("*").eq("id", userId).maybeSingle(),
+    supabase.auth.admin.getUserById(userId)
+  ]);
 
   if (profileErr || !profile) {
     throw new AppError("User not found", "USER_NOT_FOUND", 404);
@@ -169,7 +183,7 @@ export async function getAdminUserDetails(userId: string): Promise<AdminUserDeta
 
   return {
     id: profile.id,
-    email: (profile as any).auth_users?.email || "user@apexwallet.io",
+    email: authUser?.user?.email || "user@apexwallet.io",
     firstName: profile.first_name,
     lastName: profile.last_name,
     phoneNumber: profile.phone_number,

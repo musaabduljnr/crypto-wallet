@@ -22,24 +22,35 @@ export interface StaffMemberRecord {
 export async function listStaffMembers(): Promise<StaffMemberRecord[]> {
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase
-    .from("staff_users")
-    .select("*, profile:user_profiles(first_name, last_name), auth_users:id(email)")
-    .order("created_at", { ascending: true });
+  const [
+    { data: staffRows, error },
+    { data: authUsersData },
+    { data: profiles }
+  ] = await Promise.all([
+    supabase.from("staff_users").select("*").order("created_at", { ascending: true }),
+    supabase.auth.admin.listUsers({ perPage: 1000 }),
+    supabase.from("user_profiles").select("id, first_name, last_name")
+  ]);
 
-  if (error || !data) return [];
+  if (error || !staffRows) return [];
 
-  return data.map((s: any) => ({
-    id: s.id,
-    email: s.auth_users?.email || "staff@apexwallet.io",
-    firstName: s.profile?.first_name || "Staff",
-    lastName: s.profile?.last_name || "",
-    role: s.role as StaffRole,
-    isActive: s.is_active,
-    assignedBy: s.assigned_by,
-    createdAt: s.created_at,
-    updatedAt: s.updated_at,
-  }));
+  const emailMap = new Map((authUsersData?.users || []).map((u) => [u.id, u.email || ""]));
+  const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
+  return staffRows.map((s: any) => {
+    const prof = profileMap.get(s.id);
+    return {
+      id: s.id,
+      email: emailMap.get(s.id) || "staff@apexwallet.io",
+      firstName: prof?.first_name || "Staff",
+      lastName: prof?.last_name || "",
+      role: s.role as StaffRole,
+      isActive: s.is_active,
+      assignedBy: s.assigned_by,
+      createdAt: s.created_at,
+      updatedAt: s.updated_at,
+    };
+  });
 }
 
 /**
@@ -175,31 +186,12 @@ export async function assignStaffMember(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // Find target user by email
-  const { data: userRecord, error: userErr } = await supabase
-    .from("user_profiles")
-    .select("id, auth_users:id(email)")
-    .filter("auth_users.email", "eq", params.email.trim().toLowerCase())
-    .maybeSingle();
-
-  let targetUserId = userRecord?.id;
-
-  // Fallback direct auth query if joined filter returns empty
-  if (!targetUserId) {
-    const { data: directUser } = await supabase
-      .from("user_profiles")
-      .select("id")
-      .eq("email", params.email.trim().toLowerCase())
-      .maybeSingle();
-    targetUserId = directUser?.id;
-  }
-
-  // If still not found, check staff_users or user_profiles
-  if (!targetUserId) {
-    const { data: allProfiles } = await supabase.from("user_profiles").select("id, email");
-    const matched = allProfiles?.find((p) => p.email?.toLowerCase() === params.email.trim().toLowerCase());
-    targetUserId = matched?.id;
-  }
+  // Find target user by email from auth users
+  const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const matchedAuth = (authData?.users || []).find(
+    (u: any) => u.email?.toLowerCase() === params.email.trim().toLowerCase()
+  );
+  const targetUserId = matchedAuth?.id;
 
   if (!targetUserId) {
     throw new AppError(

@@ -26,7 +26,7 @@ export interface PortfolioOverview {
 
 export class PortfolioService {
   private readonly ASSET_NAMES: Record<string, string> = {
-    NGN: "Nigerian Naira",
+    USD: "US Dollar",
     USDT: "Tether USD",
     USDC: "USD Coin",
     BTC: "Bitcoin",
@@ -46,9 +46,11 @@ export class PortfolioService {
     const assets: AssetValuation[] = [];
 
     for (const [ticker, bal] of Object.entries(balances)) {
+      if (ticker === "NGN") continue; // Suppress legacy NGN
+
       const priceInfo = prices.rates[ticker] || {
-        priceUsd: ticker === "NGN" ? 1 / prices.usdToNgnRate : 1.0,
-        priceNgn: ticker === "NGN" ? 1.0 : prices.usdToNgnRate,
+        priceUsd: ticker === "USD" ? 1.0 : 1.0,
+        priceNgn: 1.0,
         change24hPercentage: 0,
       };
 
@@ -56,16 +58,8 @@ export class PortfolioService {
       const reservedNum = parseFloat(bal.reservedBalance) || 0;
       const totalUnits = availableNum + reservedNum;
 
-      let valueUsd: number;
-      let valueNgn: number;
-
-      if (ticker === "NGN") {
-        valueNgn = totalUnits;
-        valueUsd = totalUnits / prices.usdToNgnRate;
-      } else {
-        valueUsd = totalUnits * priceInfo.priceUsd;
-        valueNgn = totalUnits * priceInfo.priceNgn;
-      }
+      const valueUsd = totalUnits * (ticker === "USD" ? 1.0 : priceInfo.priceUsd);
+      const valueNgn = valueUsd;
 
       totalValueUsd += valueUsd;
       totalValueNgn += valueNgn;

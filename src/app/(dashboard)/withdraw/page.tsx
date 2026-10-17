@@ -21,6 +21,7 @@ import { InlineNotice } from "@/components/feedback/inline-notice";
 import {
   getWithdrawalFeeQuoteAction,
   executeWithdrawalAction,
+  getWithdrawalEligibilityAction,
 } from "@/actions/transaction.actions";
 import { getPortfolioAction } from "@/actions/wallet.actions";
 import { WithdrawalExecutionResult, WithdrawalFeeQuote } from "@/lib/services/withdrawal.service";
@@ -47,28 +48,42 @@ export default function WithdrawPage() {
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [loadingBalances, setLoadingBalances] = useState(true);
 
+  const [eligibility, setEligibility] = useState<{
+    eligible: boolean;
+    reason?: string;
+    remainingHours?: number;
+  } | null>(null);
+
   const [step, setStep] = useState<"INPUT" | "CONFIRM" | "SUCCESS">("INPUT");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<WithdrawalExecutionResult | null>(null);
 
   useEffect(() => {
-    async function loadBalances() {
+    async function loadInitialData() {
       try {
         setLoadingBalances(true);
-        const res = await getPortfolioAction();
-        if (res.success && res.data) {
+        const [portfolioRes, eligibilityRes] = await Promise.all([
+          getPortfolioAction(),
+          getWithdrawalEligibilityAction(),
+        ]);
+
+        if (portfolioRes.success && portfolioRes.data) {
           const b: Record<string, string> = {};
-          res.data.assets.forEach((a) => {
+          portfolioRes.data.assets.forEach((a) => {
             b[a.ticker] = a.availableBalance;
           });
           setBalances(b);
+        }
+
+        if (eligibilityRes.success && eligibilityRes.data) {
+          setEligibility(eligibilityRes.data);
         }
       } finally {
         setLoadingBalances(false);
       }
     }
-    loadBalances();
+    loadInitialData();
   }, []);
 
   // Update available networks when asset changes
@@ -123,6 +138,12 @@ export default function WithdrawPage() {
 
   const handleProceedToReview = () => {
     setErrorMsg(null);
+
+    if (eligibility && !eligibility.eligible) {
+      setErrorMsg(eligibility.reason || "can't withdraw on new device wait for 72hrs");
+      return;
+    }
+
     if (!destinationAddress.trim()) {
       setErrorMsg("Please enter a destination address.");
       return;
@@ -149,6 +170,11 @@ export default function WithdrawPage() {
   const handleExecuteWithdrawal = async () => {
     if (submitting) return;
 
+    if (eligibility && !eligibility.eligible) {
+      setErrorMsg(eligibility.reason || "can't withdraw on new device wait for 72hrs");
+      return;
+    }
+
     if (!pin || pin.length !== 4) {
       setErrorMsg("Please enter your 4-digit payment PIN to authorize this withdrawal.");
       return;
@@ -173,7 +199,12 @@ export default function WithdrawPage() {
         setReceipt(res.data);
         setStep("SUCCESS");
       } else {
-        setErrorMsg(res.error || "Withdrawal failed. Please try again.");
+        const errorText = res.error || "Withdrawal failed. Please try again.";
+        if (errorText.toLowerCase().includes("72hr") || errorText.toLowerCase().includes("new device")) {
+          setErrorMsg("can't withdraw on new device wait for 72hrs");
+        } else {
+          setErrorMsg(errorText);
+        }
       }
     } catch {
       setErrorMsg("An unexpected server error occurred during withdrawal processing.");
@@ -208,6 +239,23 @@ export default function WithdrawPage() {
           Two-Phase Settlement
         </Badge>
       </div>
+
+      {/* 72-HOUR NEW DEVICE SECURITY COOLDOWN NOTICE */}
+      {eligibility && !eligibility.eligible && (
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 shadow-sm space-y-1">
+          <div className="flex items-center space-x-2">
+            <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0" />
+            <h3 className="text-sm font-bold tracking-tight">
+              can&apos;t withdraw on new device wait for 72hrs
+            </h3>
+          </div>
+          <p className="text-xs text-amber-700 dark:text-amber-300/90 pl-7 leading-relaxed">
+            Your account or login device is currently subject to our mandatory 72-hour security cooling period.
+            {eligibility.remainingHours ? ` Cooldown remaining: approximately ${eligibility.remainingHours} hour${eligibility.remainingHours > 1 ? "s" : ""}.` : ""}
+            {" "}External on-chain transfers are blocked until the verification period expires.
+          </p>
+        </div>
+      )}
 
       {step === "INPUT" && (
         <Card className="shadow-sm">

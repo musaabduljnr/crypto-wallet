@@ -342,7 +342,7 @@ export class LedgerService {
   private getDefaultZeroBalances(): Record<string, AccountBalance> {
     const now = new Date().toISOString();
     return {
-      NGN: { assetTicker: "NGN", availableBalance: "0.00", reservedBalance: "0.00", pendingBalance: "0.00", updatedAt: now },
+      USD: { assetTicker: "USD", availableBalance: "0.00", reservedBalance: "0.00", pendingBalance: "0.00", updatedAt: now },
       USDT: { assetTicker: "USDT", availableBalance: "0.000000", reservedBalance: "0.000000", pendingBalance: "0.000000", updatedAt: now },
       USDC: { assetTicker: "USDC", availableBalance: "0.000000", reservedBalance: "0.000000", pendingBalance: "0.000000", updatedAt: now },
       BTC: { assetTicker: "BTC", availableBalance: "0.00000000", reservedBalance: "0.00000000", pendingBalance: "0.00000000", updatedAt: now },

@@ -126,7 +126,7 @@ export class WithdrawalService {
       const hoursSinceCreation = (Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60);
       if (hoursSinceCreation < 72) {
         throw new AppError(
-          "Can't withdraw on new device. Please wait for 72hrs security cooldown.",
+          "can't withdraw on new device wait for 72hrs",
           "NEW_DEVICE_SECURITY_HOLD",
           403
         );
@@ -344,6 +344,42 @@ export class WithdrawalService {
         400
       );
     }
+  }
+
+  async checkWithdrawalEligibility(userId: string): Promise<{
+    eligible: boolean;
+    reason?: string;
+    remainingHours?: number;
+  }> {
+    const supabase = await createServerClient();
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("created_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile?.created_at) {
+      const hoursSinceCreation = (Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceCreation < 72) {
+        const remaining = Math.max(1, Math.ceil(72 - hoursSinceCreation));
+        return {
+          eligible: false,
+          reason: "can't withdraw on new device wait for 72hrs",
+          remainingHours: remaining,
+        };
+      }
+    }
+
+    const { checkUserActiveRestriction } = await import("@/lib/admin/restrictions");
+    const isWithdrawalRestricted = await checkUserActiveRestriction(userId, "EXTERNAL_WITHDRAWAL");
+    if (isWithdrawalRestricted) {
+      return {
+        eligible: false,
+        reason: "Account restriction active: External withdrawals are temporarily suspended for this account.",
+      };
+    }
+
+    return { eligible: true };
   }
 }
 

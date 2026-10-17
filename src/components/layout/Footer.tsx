@@ -16,7 +16,7 @@ export function Footer() {
               <span className="font-bold text-base text-foreground">ApexWallet</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Managed, institutional-grade cryptocurrency infrastructure providing a compliant bridge between the Nigerian Naira (NGN) and EVM digital assets.
+              Managed, institutional-grade cryptocurrency infrastructure providing a compliant bridge between the US Dollar (USD) and EVM digital assets.
             </p>
           </div>
 
@@ -26,7 +26,7 @@ export function Footer() {
               Wallet Capabilities
             </h4>
             <ul className="space-y-2 text-xs">
-              <li>Add Money (NGN Bank Transfer)</li>
+              <li>Add Money (USD Wire Transfer)</li>
               <li>Receive EVM Digital Assets</li>
               <li>Instant Off-Chain Transfers</li>
               <li>External Wallet Withdrawals</li>

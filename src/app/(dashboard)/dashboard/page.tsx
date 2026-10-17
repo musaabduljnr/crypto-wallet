@@ -78,9 +78,9 @@ export default async function DashboardPage() {
 
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap items-center gap-3">
-              <Link href="/add-money">
-                <Button variant="primary" size="md" leftIcon={<Banknote className="w-4 h-4" />}>
-                  Fund Wallet
+              <Link href="/withdraw">
+                <Button variant="primary" size="md" leftIcon={<ArrowUpRight className="w-4 h-4" />}>
+                  Withdraw
                 </Button>
               </Link>
               <Link href="/receive">
@@ -95,13 +95,13 @@ export default async function DashboardPage() {
 
       {/* QUICK ACTIONS BAR */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link href="/add-money">
+        <Link href="/withdraw">
           <Card className="hover:border-primary/50 hover:bg-muted/30 transition-all text-center p-4">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
-              <Banknote className="h-5 w-5" />
+              <ArrowUpRight className="h-5 w-5" />
             </div>
-            <h4 className="text-xs font-semibold text-foreground">Fund Wallet</h4>
-            <span className="text-[10px] text-muted-foreground">Crypto Deposit</span>
+            <h4 className="text-xs font-semibold text-foreground">Withdraw</h4>
+            <span className="text-[10px] text-muted-foreground">Crypto Payout</span>
           </Card>
         </Link>
 

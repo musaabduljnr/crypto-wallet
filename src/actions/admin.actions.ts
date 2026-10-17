@@ -296,3 +296,79 @@ export async function runReconciliationAuditAction(): Promise<AdminActionRespons
     return { success: false, error: err.message || "Failed to run reconciliation audit" };
   }
 }
+
+/**
+ * Super Admin manually adds a double-entry ledger transaction.
+ */
+export async function adminCreateTransactionAction(params: {
+  userId: string;
+  type: string;
+  asset: string;
+  amount: string;
+  direction: "CREDIT" | "DEBIT";
+  status: "POSTED" | "PENDING" | "FAILED" | "REVERSED" | "COMPLETED";
+  referenceId?: string;
+  providerRef?: string;
+  note?: string;
+  createdAt?: string;
+}): Promise<AdminActionResponse> {
+  try {
+    const staff = await requireStaffPermission("transactions.manage");
+    const { adminCreateTransaction } = await import("@/lib/admin/transactions");
+    const result = await adminCreateTransaction(staff, params);
+    revalidatePath("/admin/transactions");
+    revalidatePath(`/admin/users/${params.userId}`);
+    revalidatePath("/admin");
+    return { success: true, data: result };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to create transaction" };
+  }
+}
+
+/**
+ * Super Admin updates an existing transaction record.
+ */
+export async function adminUpdateTransactionAction(params: {
+  transactionId: string;
+  status?: string;
+  amount?: string;
+  referenceId?: string;
+  providerRef?: string;
+  note?: string;
+  createdAt?: string;
+  userId?: string;
+}): Promise<AdminActionResponse> {
+  try {
+    const staff = await requireStaffPermission("transactions.manage");
+    const { adminUpdateTransaction } = await import("@/lib/admin/transactions");
+    const result = await adminUpdateTransaction(staff, params);
+    revalidatePath("/admin/transactions");
+    revalidatePath(`/admin/transactions/${params.transactionId}`);
+    if (params.userId) revalidatePath(`/admin/users/${params.userId}`);
+    revalidatePath("/admin");
+    return { success: true, data: result };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to update transaction" };
+  }
+}
+
+/**
+ * Super Admin deletes an existing transaction and rolls back associated ledger records.
+ */
+export async function adminDeleteTransactionAction(params: {
+  transactionId: string;
+  reason?: string;
+  userId?: string;
+}): Promise<AdminActionResponse> {
+  try {
+    const staff = await requireStaffPermission("transactions.manage");
+    const { adminDeleteTransaction } = await import("@/lib/admin/transactions");
+    const result = await adminDeleteTransaction(staff, params);
+    revalidatePath("/admin/transactions");
+    if (params.userId) revalidatePath(`/admin/users/${params.userId}`);
+    revalidatePath("/admin");
+    return { success: true, data: result };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to delete transaction" };
+  }
+}

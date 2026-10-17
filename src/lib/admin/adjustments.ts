@@ -58,7 +58,7 @@ export async function requestBalanceAdjustment(
   }
 
   const ticker = input.assetTicker.toUpperCase();
-  const validAssets = ["USDT", "USDC", "BTC", "ETH", "SOL", "NGN"];
+  const validAssets = ["USDT", "USDC", "BTC", "ETH", "SOL", "USD"];
   if (!validAssets.includes(ticker)) {
     throw new AppError(`Unsupported asset: ${ticker}`, "INVALID_ASSET", 400);
   }

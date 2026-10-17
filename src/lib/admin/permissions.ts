@@ -25,7 +25,8 @@ export type AdminPermission =
   | "audit_logs.read"
   | "staff.manage"
   | "settings.manage"
-  | "operations.manage";
+  | "operations.manage"
+  | "transactions.manage";
 
 export const ROLE_PERMISSIONS: Record<StaffRole, readonly AdminPermission[]> = {
   super_admin: [
@@ -35,6 +36,7 @@ export const ROLE_PERMISSIONS: Record<StaffRole, readonly AdminPermission[]> = {
     "users.restrict",
     "transactions.read",
     "transactions.review",
+    "transactions.manage",
     "balances.adjust.request",
     "balances.adjust.approve",
     "withdrawals.review",

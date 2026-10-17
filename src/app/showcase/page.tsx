@@ -168,7 +168,7 @@ export default function DesignSystemShowcasePage() {
             <CardContent className="p-6 space-y-4">
               <div>
                 <Heading as="h1" variant="hero">
-                  Hero Display Title (₦1,425,850.00)
+                  Hero Display Title ($1,425,850.00)
                 </Heading>
                 <Text variant="caption">`text-3xl md:text-5xl font-bold tracking-tight`</Text>
               </div>
@@ -186,13 +186,13 @@ export default function DesignSystemShowcasePage() {
               </div>
               <div>
                 <Text variant="body">
-                  Standard Body Text: Nigerian Naira deposits are settled off-chain with immutable double-entry journal postings.
+                  Standard Body Text: US Dollar deposits are settled off-chain with immutable double-entry journal postings.
                 </Text>
                 <Text variant="caption">`text-sm md:text-base leading-relaxed`</Text>
               </div>
               <div>
                 <Text variant="mono">
-                  Tabular Numerals: ₦1,234,567.89 | 100.000000 USDT | 0.450000 ETH
+                  Tabular Numerals: $1,234,567.89 | 100.000000 USDT | 0.450000 ETH
                 </Text>
                 <Text variant="caption">`font-mono tabular-nums` (Zero jitter across balance mutations)</Text>
               </div>
@@ -263,9 +263,9 @@ export default function DesignSystemShowcasePage() {
                 />
 
                 <div className="pt-4 border-t border-border space-y-2">
-                  <FeeSummaryRow label="Network Base Fee" value="₦ 0.00" subValue="Instant Free Off-chain" />
+                  <FeeSummaryRow label="Network Base Fee" value="$0.00" subValue="Instant Free Off-chain" />
                   <FeeSummaryRow label="Estimated Gas Fee" value="0.00045 ETH" subValue="~$1.20 USD" />
-                  <FeeSummaryRow label="Total Amount Deducted" value="₦ 50,000.00" isTotal={true} />
+                  <FeeSummaryRow label="Total Amount Deducted" value="$50.00" isTotal={true} />
                 </div>
               </CardContent>
             </Card>

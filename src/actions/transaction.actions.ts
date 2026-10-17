@@ -116,6 +116,18 @@ export async function executeWithdrawalAction(params: {
   }
 }
 
+export async function getWithdrawalEligibilityAction(): Promise<
+  ActionResponse<{ eligible: boolean; reason?: string; remainingHours?: number }>
+> {
+  try {
+    const user = await getAuthenticatedUser();
+    const result = await withdrawalService.checkWithdrawalEligibility(user.id);
+    return { success: true, data: result };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to check withdrawal eligibility" };
+  }
+}
+
 // ==========================================
 // C. CRYPTO SWAPS (30s RFQ RATE LOCK)
 // ==========================================

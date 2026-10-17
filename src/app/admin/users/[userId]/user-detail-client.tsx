@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AdminUserDetails } from "@/lib/admin/users";
+import { LedgerTransactionSummary } from "@/lib/services/ledger.service";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +15,9 @@ import {
   updateAdminUserProfileAction,
   liftRestrictionAction,
   requestBalanceAdjustmentAction,
+  adminCreateTransactionAction,
+  adminUpdateTransactionAction,
+  adminDeleteTransactionAction,
 } from "@/actions/admin.actions";
 import {
   SlidersHorizontal,
@@ -22,9 +28,15 @@ import {
   CheckCircle2,
   Clock,
   Plus,
+  Pencil,
+  Trash2,
+  X,
+  ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 
 export function UserDetailClient({ user }: { user: AdminUserDetails }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"balances" | "restrictions" | "transactions" | "notes" | "edit" | "adjust">("balances");
 
   // Note State
@@ -53,6 +65,131 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
   const [liftingId, setLiftingId] = useState<string | null>(null);
   const [liftReason, setLiftReason] = useState("");
   const [submittingLift, setSubmittingLift] = useState(false);
+
+  // Transaction Management State
+  const [showAddTxModal, setShowAddTxModal] = useState(false);
+  const [editingTx, setEditingTx] = useState<LedgerTransactionSummary | null>(null);
+  const [deletingTx, setDeletingTx] = useState<LedgerTransactionSummary | null>(null);
+
+  // Add Tx Form
+  const [addTxType, setAddTxType] = useState("FIAT_DEPOSIT");
+  const [addTxAsset, setAddTxAsset] = useState("USD");
+  const [addTxAmount, setAddTxAmount] = useState("");
+  const [addTxDirection, setAddTxDirection] = useState<"CREDIT" | "DEBIT">("CREDIT");
+  const [addTxStatus, setAddTxStatus] = useState<"COMPLETED" | "PENDING" | "FAILED">("COMPLETED");
+  const [addTxRefId, setAddTxRefId] = useState("");
+  const [addTxProviderRef, setAddTxProviderRef] = useState("");
+  const [addTxCustomDate, setAddTxCustomDate] = useState("");
+  const [addTxNote, setAddTxNote] = useState("");
+
+  // Edit Tx Form
+  const [editTxStatus, setEditTxStatus] = useState("COMPLETED");
+  const [editTxAmount, setEditTxAmount] = useState("");
+  const [editTxRefId, setEditTxRefId] = useState("");
+  const [editTxProviderRef, setEditTxProviderRef] = useState("");
+  const [editTxCustomDate, setEditTxCustomDate] = useState("");
+  const [editTxNote, setEditTxNote] = useState("");
+
+  // Delete Tx Form
+  const [deleteTxReason, setDeleteTxReason] = useState("");
+
+  // Submitting / Error States
+  const [submittingTx, setSubmittingTx] = useState(false);
+  const [txError, setTxError] = useState<string | null>(null);
+  const [txSuccess, setTxSuccess] = useState<string | null>(null);
+
+  const openEditTxModal = (tx: LedgerTransactionSummary) => {
+    setEditingTx(tx);
+    setEditTxStatus(tx.status === "POSTED" ? "COMPLETED" : tx.status);
+    setEditTxAmount(tx.amount);
+    setEditTxRefId(tx.referenceId);
+    setEditTxProviderRef(tx.externalProviderRef || "");
+    setEditTxCustomDate(tx.createdAt ? new Date(tx.createdAt).toISOString().slice(0, 16) : "");
+    setEditTxNote("");
+    setTxError(null);
+  };
+
+  const handleCreateTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addTxAmount || parseFloat(addTxAmount) <= 0) {
+      setTxError("Please enter a valid positive amount.");
+      return;
+    }
+    setSubmittingTx(true);
+    setTxError(null);
+    const res = await adminCreateTransactionAction({
+      userId: user.id,
+      type: addTxType,
+      asset: addTxAsset,
+      amount: addTxAmount,
+      direction: addTxDirection,
+      status: addTxStatus,
+      referenceId: addTxRefId.trim() || undefined,
+      providerRef: addTxProviderRef.trim() || undefined,
+      note: addTxNote.trim() || undefined,
+      createdAt: addTxCustomDate ? new Date(addTxCustomDate).toISOString() : undefined,
+    });
+    setSubmittingTx(false);
+    if (res.success) {
+      setTxSuccess("Transaction successfully posted to ledger.");
+      setShowAddTxModal(false);
+      setAddTxAmount("");
+      setAddTxRefId("");
+      setAddTxProviderRef("");
+      setAddTxNote("");
+      router.refresh();
+      setTimeout(() => setTxSuccess(null), 4000);
+    } else {
+      setTxError(res.error || "Failed to create transaction.");
+    }
+  };
+
+  const handleUpdateTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTx) return;
+    setSubmittingTx(true);
+    setTxError(null);
+    const res = await adminUpdateTransactionAction({
+      transactionId: editingTx.id,
+      status: editTxStatus,
+      amount: editTxAmount || undefined,
+      referenceId: editTxRefId.trim() || undefined,
+      providerRef: editTxProviderRef.trim() || undefined,
+      note: editTxNote.trim() || undefined,
+      createdAt: editTxCustomDate ? new Date(editTxCustomDate).toISOString() : undefined,
+      userId: user.id,
+    });
+    setSubmittingTx(false);
+    if (res.success) {
+      setTxSuccess("Transaction updated successfully.");
+      setEditingTx(null);
+      router.refresh();
+      setTimeout(() => setTxSuccess(null), 4000);
+    } else {
+      setTxError(res.error || "Failed to update transaction.");
+    }
+  };
+
+  const handleDeleteTx = async () => {
+    if (!deletingTx) return;
+    setSubmittingTx(true);
+    setTxError(null);
+    const res = await adminDeleteTransactionAction({
+      transactionId: deletingTx.id,
+      reason: deleteTxReason.trim() || undefined,
+      userId: user.id,
+    });
+    setSubmittingTx(false);
+    if (res.success) {
+      setTxSuccess(`Transaction ${deletingTx.referenceId} deleted and ledger reversed.`);
+      setDeletingTx(null);
+      setDeleteTxReason("");
+      router.refresh();
+      setTimeout(() => setTxSuccess(null), 4000);
+    } else {
+      setTxError(res.error || "Failed to delete transaction.");
+    }
+  };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +316,7 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
       {/* TAB 1: LEDGER BALANCES */}
       {activeTab === "balances" && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {["USDT", "USDC", "BTC", "ETH", "SOL", "NGN"].map((ticker) => {
+          {["USDT", "USDC", "BTC", "ETH", "SOL", "USD"].map((ticker) => {
             const b = user.balances[ticker] || { available: "0.000000", reserved: "0.000000", pending: "0.000000" };
             return (
               <Card key={ticker} className="p-3.5 space-y-1 bg-card/60">
@@ -296,6 +433,37 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
       {/* TAB 3: TRANSACTIONS */}
       {activeTab === "transactions" && (
         <Card className="shadow-xs overflow-hidden">
+          <div className="p-3 bg-muted/20 border-b border-border flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-semibold text-foreground">Double-Entry Ledger Transactions</h4>
+              <p className="text-[11px] text-muted-foreground">Manage customer transaction history (Add, Edit, Delete)</p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => {
+                setShowAddTxModal(true);
+                setTxError(null);
+              }}
+              className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90 flex items-center space-x-1"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Add Transaction
+            </Button>
+          </div>
+
+          {txSuccess && (
+            <div className="m-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center space-x-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>{txSuccess}</span>
+            </div>
+          )}
+          {txError && (
+            <div className="m-3 p-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold flex items-center space-x-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{txError}</span>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/40 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase">
@@ -306,12 +474,13 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
                   <th className="py-2.5 px-4">Direction</th>
                   <th className="py-2.5 px-4">Status</th>
                   <th className="py-2.5 px-4">Date</th>
+                  <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {user.transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
                       No double-entry transactions recorded for this user.
                     </td>
                   </tr>
@@ -327,7 +496,7 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
                       </td>
                       <td className="py-2.5 px-4">
                         <span className={`font-mono text-[11px] font-bold ${tx.direction === "CREDIT" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
-                          {tx.direction}
+                           {tx.direction}
                         </span>
                       </td>
                       <td className="py-2.5 px-4">
@@ -337,6 +506,38 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
                       </td>
                       <td className="py-2.5 px-4 text-[11px] text-muted-foreground font-mono">
                         {new Date(tx.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <Link href={`/admin/transactions/${tx.id}`}>
+                            <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" title="Inspect">
+                              Inspect
+                              <ArrowRight className="h-3 w-3 ml-1" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditTxModal(tx)}
+                            className="h-6 text-[11px] px-2 text-primary"
+                            title="Edit Transaction"
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setDeletingTx(tx);
+                              setTxError(null);
+                            }}
+                            className="h-6 text-[11px] px-1.5 text-destructive hover:bg-destructive/10"
+                            title="Delete Transaction"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -372,7 +573,7 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
                     onChange={(e) => setAdjAsset(e.target.value)}
                     className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary"
                   >
-                    {["USDT", "USDC", "BTC", "ETH", "SOL", "NGN"].map((t) => (
+                    {["USDT", "USDC", "BTC", "ETH", "SOL", "USD"].map((t) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
@@ -519,6 +720,304 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
             </CardContent>
           </form>
         </Card>
+      )}
+
+      {/* MODAL 1: ADD TRANSACTION */}
+      {showAddTxModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <Card className="w-full max-w-lg p-6 bg-card border-border shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Add Ledger Transaction</h3>
+                <p className="text-xs text-muted-foreground">Posting directly for {user.firstName} {user.lastName}</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowAddTxModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {txError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+                {txError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateTx} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Transaction Type</label>
+                  <select
+                    value={addTxType}
+                    onChange={(e) => setAddTxType(e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  >
+                    <option value="FIAT_DEPOSIT">Fiat Deposit (USD)</option>
+                    <option value="CRYPTO_DEPOSIT">Crypto Deposit</option>
+                    <option value="INTERNAL_TRANSFER">Internal Transfer</option>
+                    <option value="EXTERNAL_WITHDRAWAL">External Withdrawal</option>
+                    <option value="SWAP_CONVERSION">Swap Conversion</option>
+                    <option value="SYSTEM_RECONCILIATION">Balance Adjustment</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Asset</label>
+                  <select
+                    value={addTxAsset}
+                    onChange={(e) => setAddTxAsset(e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  >
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="BTC">BTC (Bitcoin)</option>
+                    <option value="ETH">ETH (Ethereum)</option>
+                    <option value="USDT">USDT (Tether USD)</option>
+                    <option value="USDC">USDC (USD Coin)</option>
+                    <option value="SOL">SOL (Solana)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Amount</label>
+                  <Input
+                    type="number"
+                    step="any"
+                    placeholder="0.00"
+                    value={addTxAmount}
+                    onChange={(e) => setAddTxAmount(e.target.value)}
+                    required
+                    className="text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Direction</label>
+                  <select
+                    value={addTxDirection}
+                    onChange={(e) => setAddTxDirection(e.target.value as "CREDIT" | "DEBIT")}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  >
+                    <option value="CREDIT">CREDIT (+ Add to user)</option>
+                    <option value="DEBIT">DEBIT (- Deduct from user)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Status</label>
+                  <select
+                    value={addTxStatus}
+                    onChange={(e) => setAddTxStatus(e.target.value as "COMPLETED" | "PENDING" | "FAILED")}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  >
+                    <option value="COMPLETED">COMPLETED (Posted to Ledger)</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="FAILED">FAILED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Custom Date (Optional)</label>
+                  <Input
+                    type="datetime-local"
+                    value={addTxCustomDate}
+                    onChange={(e) => setAddTxCustomDate(e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Reference ID (Optional)</label>
+                  <Input
+                    placeholder="Auto-generated if empty"
+                    value={addTxRefId}
+                    onChange={(e) => setAddTxRefId(e.target.value)}
+                    className="text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Tx Hash / Provider Ref</label>
+                  <Input
+                    placeholder="0x... or bank ref"
+                    value={addTxProviderRef}
+                    onChange={(e) => setAddTxProviderRef(e.target.value)}
+                    className="text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1 text-foreground">Note / Justification</label>
+                <Input
+                  placeholder="Administrative reason"
+                  value={addTxNote}
+                  onChange={(e) => setAddTxNote(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddTxModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={submittingTx}>
+                  {submittingTx ? "Posting..." : "Create Transaction"}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* MODAL 2: EDIT TRANSACTION */}
+      {editingTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <Card className="w-full max-w-lg p-6 bg-card border-border shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Edit Transaction</h3>
+                <p className="text-xs text-muted-foreground font-mono">{editingTx.referenceId}</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditingTx(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {txError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+                {txError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateTx} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Status</label>
+                  <select
+                    value={editTxStatus}
+                    onChange={(e) => setEditTxStatus(e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  >
+                    <option value="COMPLETED">COMPLETED (POSTED)</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="REVERSED">REVERSED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Amount ({editingTx.assetTicker})</label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={editTxAmount}
+                    onChange={(e) => setEditTxAmount(e.target.value)}
+                    required
+                    className="text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Reference ID</label>
+                  <Input
+                    value={editTxRefId}
+                    onChange={(e) => setEditTxRefId(e.target.value)}
+                    className="text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Custom Date</label>
+                  <Input
+                    type="datetime-local"
+                    value={editTxCustomDate}
+                    onChange={(e) => setEditTxCustomDate(e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1 text-foreground">Provider Ref / Hash</label>
+                <Input
+                  value={editTxProviderRef}
+                  onChange={(e) => setEditTxProviderRef(e.target.value)}
+                  className="text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1 text-foreground">Super Admin Note</label>
+                <Input
+                  placeholder="Reason for change"
+                  value={editTxNote}
+                  onChange={(e) => setEditTxNote(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" onClick={() => setEditingTx(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={submittingTx}>
+                  {submittingTx ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* MODAL 3: DELETE TRANSACTION */}
+      {deletingTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <Card className="w-full max-w-md p-6 bg-card border-destructive/40 shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3 text-destructive">
+              <ShieldAlert className="h-6 w-6 shrink-0" />
+              <div>
+                <h3 className="text-base font-bold text-foreground">Delete Transaction?</h3>
+                <p className="text-xs text-muted-foreground font-mono">{deletingTx.referenceId}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This will permanently delete transaction <strong className="text-foreground">{deletingTx.referenceId}</strong> ({deletingTx.amount} {deletingTx.assetTicker}) from this user&apos;s ledger. If the transaction was completed, balances will be reversed automatically.
+            </p>
+
+            {txError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+                {txError}
+              </div>
+            )}
+
+            <div>
+              <label className="font-semibold block mb-1 text-xs text-foreground">Audit Reason</label>
+              <Input
+                placeholder="Reason for deletion"
+                value={deleteTxReason}
+                onChange={(e) => setDeleteTxReason(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-3 border-t border-border">
+              <Button type="button" variant="outline" size="sm" onClick={() => setDeletingTx(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteTx}
+                disabled={submittingTx}
+              >
+                {submittingTx ? "Deleting..." : "Confirm Delete"}
+              </Button>
+            </div>
+          </Card>
+        </div>
       )}
     </div>
   );

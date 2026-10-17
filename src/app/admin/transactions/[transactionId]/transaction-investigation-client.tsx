@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdminTransactionDetail } from "@/lib/admin/transactions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { addAdminNoteAction } from "@/actions/admin.actions";
+import { Input } from "@/components/ui/input";
+import {
+  addAdminNoteAction,
+  adminUpdateTransactionAction,
+  adminDeleteTransactionAction,
+} from "@/actions/admin.actions";
 import {
   FileText,
   ShieldCheck,
@@ -15,14 +21,37 @@ import {
   Hash,
   Scale,
   Plus,
+  Pencil,
+  Trash2,
+  X,
+  ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
 
 export function TransactionInvestigationClient({ tx }: { tx: AdminTransactionDetail }) {
+  const router = useRouter();
   const [notes, setNotes] = useState(tx.notes);
   const [noteText, setNoteText] = useState("");
   const [isConfidential, setIsConfidential] = useState(false);
   const [submittingNote, setSubmittingNote] = useState(false);
+
+  // Super Admin Edit & Delete States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [editStatus, setEditStatus] = useState(tx.status === "POSTED" ? "COMPLETED" : tx.status);
+  const [editAmount, setEditAmount] = useState(tx.entries[0]?.amount || "0");
+  const [editRefId, setEditRefId] = useState(tx.referenceId);
+  const [editProviderRef, setEditProviderRef] = useState(tx.providerRef || "");
+  const [editCustomDate, setEditCustomDate] = useState(
+    tx.createdAt ? new Date(tx.createdAt).toISOString().slice(0, 16) : ""
+  );
+  const [editNote, setEditNote] = useState((tx.metadata?.note as string) || "");
+
+  const [deleteReason, setDeleteReason] = useState("");
+  const [submittingAction, setSubmittingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   // Calculate sum of debits and sum of credits to verify ledger balance invariant
   let totalDebits = 0;
@@ -34,6 +63,51 @@ export function TransactionInvestigationClient({ tx }: { tx: AdminTransactionDet
   });
 
   const isBalanced = Math.abs(totalDebits - totalCredits) < 0.00000001;
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingAction(true);
+    setActionError(null);
+
+    const res = await adminUpdateTransactionAction({
+      transactionId: tx.id,
+      status: editStatus,
+      amount: editAmount || undefined,
+      referenceId: editRefId.trim() || undefined,
+      providerRef: editProviderRef.trim() || undefined,
+      note: editNote.trim() || undefined,
+      createdAt: editCustomDate ? new Date(editCustomDate).toISOString() : undefined,
+    });
+
+    setSubmittingAction(false);
+
+    if (res.success) {
+      setActionSuccess("Transaction updated successfully!");
+      setShowEditModal(false);
+      router.refresh();
+      setTimeout(() => setActionSuccess(null), 4000);
+    } else {
+      setActionError(res.error || "Failed to update transaction.");
+    }
+  };
+
+  const handleDelete = async () => {
+    setSubmittingAction(true);
+    setActionError(null);
+
+    const res = await adminDeleteTransactionAction({
+      transactionId: tx.id,
+      reason: deleteReason.trim() || undefined,
+    });
+
+    setSubmittingAction(false);
+
+    if (res.success) {
+      router.push("/admin/transactions");
+    } else {
+      setActionError(res.error || "Failed to delete transaction.");
+    }
+  };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +143,46 @@ export function TransactionInvestigationClient({ tx }: { tx: AdminTransactionDet
 
   return (
     <div className="space-y-6">
+      {/* Super Admin Management Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl bg-card/60 border border-border">
+        <div>
+          <span className="text-xs font-semibold text-foreground">Super Admin Ledger Control:</span>
+          <span className="text-xs text-muted-foreground ml-2">Edit journal records or reverse transaction entries.</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setShowEditModal(true);
+              setActionError(null);
+            }}
+            className="text-xs h-8"
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1" />
+            Edit Transaction
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              setShowDeleteModal(true);
+              setActionError(null);
+            }}
+            className="text-xs h-8"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            Delete Transaction
+          </Button>
+        </div>
+      </div>
+
+      {actionSuccess && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center space-x-2">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
       {/* Financial & Ledger Invariant Summary Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 bg-card/60 border-border/60">
@@ -240,6 +354,156 @@ export function TransactionInvestigationClient({ tx }: { tx: AdminTransactionDet
           </div>
         </CardContent>
       </Card>
+
+      {/* EDIT MODAL */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <Card className="w-full max-w-lg p-6 bg-card border-border shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Edit Transaction</h3>
+                <p className="text-xs text-muted-foreground font-mono">{tx.referenceId}</p>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowEditModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {actionError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+                {actionError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdate} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  >
+                    <option value="COMPLETED">COMPLETED (POSTED)</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="FAILED">FAILED</option>
+                    <option value="REVERSED">REVERSED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Amount ({tx.entries[0]?.assetTicker || "USD"})</label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    required
+                    className="text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Reference ID</label>
+                  <Input
+                    value={editRefId}
+                    onChange={(e) => setEditRefId(e.target.value)}
+                    className="text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-foreground">Custom Date</label>
+                  <Input
+                    type="datetime-local"
+                    value={editCustomDate}
+                    onChange={(e) => setEditCustomDate(e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1 text-foreground">Provider Ref / Hash</label>
+                <Input
+                  value={editProviderRef}
+                  onChange={(e) => setEditProviderRef(e.target.value)}
+                  className="text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1 text-foreground">Super Admin Note</label>
+                <Input
+                  placeholder="Reason for change"
+                  value={editNote}
+                  onChange={(e) => setEditNote(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={submittingAction}>
+                  {submittingAction ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* DELETE MODAL */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <Card className="w-full max-w-md p-6 bg-card border-destructive/40 shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3 text-destructive">
+              <ShieldAlert className="h-6 w-6 shrink-0" />
+              <div>
+                <h3 className="text-base font-bold text-foreground">Delete Transaction?</h3>
+                <p className="text-xs text-muted-foreground font-mono">{tx.referenceId}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This action will permanently delete transaction <strong className="text-foreground">{tx.referenceId}</strong> and all its associated double-entry ledger lines. If the transaction was posted, customer balances will be safely reversed.
+            </p>
+
+            {actionError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+                {actionError}
+              </div>
+            )}
+
+            <div>
+              <label className="font-semibold block mb-1 text-xs text-foreground">Audit Reason</label>
+              <Input
+                placeholder="Reason for deletion"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-3 border-t border-border">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={submittingAction}
+              >
+                {submittingAction ? "Deleting..." : "Confirm Delete"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

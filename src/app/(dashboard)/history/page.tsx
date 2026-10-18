@@ -101,6 +101,13 @@ export default function HistoryPage() {
     if (type.includes("FUNDING") || type.includes("DEPOSIT")) {
       return <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />;
     }
+    if (type.includes("RECONCILIATION") || type.includes("ADJUSTMENT")) {
+      return direction === "CREDIT" ? (
+        <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
+      ) : (
+        <ArrowUpRight className="w-3.5 h-3.5 text-amber-500" />
+      );
+    }
     return <FileText className="w-3.5 h-3.5 text-muted-foreground" />;
   };
 
@@ -155,11 +162,13 @@ export default function HistoryPage() {
             id="history-type-filter"
           >
             <option value="ALL">All Event Types</option>
+            <option value="FIAT_DEPOSIT">Fiat Deposits</option>
             <option value="FIAT_FUNDING">Fiat Funding</option>
             <option value="CRYPTO_DEPOSIT">Crypto Deposits</option>
             <option value="INTERNAL_TRANSFER">Internal Transfers</option>
             <option value="EXTERNAL_WITHDRAWAL">Withdrawals</option>
             <option value="SWAP_CONVERSION">Swaps</option>
+            <option value="SYSTEM_RECONCILIATION">Balance Adjustments</option>
           </select>
         </div>
 
@@ -248,7 +257,9 @@ export default function HistoryPage() {
                           {getEventIcon(tx.transactionType, tx.direction)}
                         </div>
                         <span className="capitalize">
-                          {tx.transactionType.toLowerCase().replace(/_/g, " ")}
+                          {tx.transactionType === "SYSTEM_RECONCILIATION"
+                            ? "Balance Adjustment"
+                            : tx.transactionType.toLowerCase().replace(/_/g, " ")}
                         </span>
                       </td>
 

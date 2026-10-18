@@ -110,22 +110,34 @@ export async function getAdminTransactionDetails(transactionId: string): Promise
   // Fetch double-entry ledger entries
   const { data: entries, error: entriesErr } = await supabase
     .from("ledger_entries")
-    .select("*, account:account_id(account_type, user_id)")
+    .select("id, account_id, direction, amount, asset_ticker")
     .eq("transaction_id", transactionId);
 
   if (entriesErr) {
     throw new AppError("Failed to fetch transaction entries", "ENTRIES_FETCH_FAILED", 500);
   }
 
-  const mappedEntries = (entries || []).map((e: any) => ({
-    id: e.id,
-    accountId: e.account_id,
-    accountType: e.account?.account_type || "UNKNOWN",
-    userId: e.account?.user_id || null,
-    direction: e.direction,
-    amount: String(e.amount),
-    assetTicker: e.asset_ticker,
-  }));
+  // Resolve account metadata
+  const acctIds = (entries || []).map((e: any) => e.account_id);
+  const { data: accounts } = await supabase
+    .from("ledger_accounts")
+    .select("id, account_type, user_id")
+    .in("id", acctIds.length > 0 ? acctIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const acctMap = new Map((accounts || []).map((a: any) => [a.id, a]));
+
+  const mappedEntries = (entries || []).map((e: any) => {
+    const acct = acctMap.get(e.account_id);
+    return {
+      id: e.id,
+      accountId: e.account_id,
+      accountType: acct?.account_type || "UNKNOWN",
+      userId: acct?.user_id || null,
+      direction: e.direction,
+      amount: String(e.amount),
+      assetTicker: e.asset_ticker,
+    };
+  });
 
   const notes = await getAdminNotes("TRANSACTION", transactionId);
 
@@ -306,7 +318,7 @@ export async function adminCreateTransaction(
   if (dbStatus === "POSTED") {
     const { data: wb } = await adminSupabase
       .from("wallet_balances")
-      .select("available_balance")
+      .select("available_balance, reserved_balance, pending_balance")
       .eq("account_id", userAcctId)
       .maybeSingle();
 
@@ -316,8 +328,18 @@ export async function adminCreateTransaction(
 
     await adminSupabase
       .from("wallet_balances")
-      .update({ available_balance: newBal, updated_at: new Date().toISOString() })
-      .eq("account_id", userAcctId);
+      .upsert(
+        {
+          account_id: userAcctId,
+          user_id: input.userId,
+          asset_ticker: asset,
+          available_balance: newBal,
+          reserved_balance: wb?.reserved_balance || 0,
+          pending_balance: wb?.pending_balance || 0,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "account_id" }
+      );
   }
 
   // 7. Record admin audit trail
@@ -362,10 +384,10 @@ export async function adminUpdateTransaction(
 ): Promise<{ success: boolean }> {
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch current transaction and its ledger entries
+  // 1. Fetch current transaction and its ledger entries cleanly
   const { data: tx, error: txErr } = await adminSupabase
     .from("ledger_transactions")
-    .select("*, entries:ledger_entries(*, account:account_id(user_id, account_type))")
+    .select("*")
     .eq("id", input.transactionId)
     .maybeSingle();
 
@@ -373,11 +395,26 @@ export async function adminUpdateTransaction(
     throw new AppError("Transaction not found", "TRANSACTION_NOT_FOUND", 404);
   }
 
+  const { data: entries } = await adminSupabase
+    .from("ledger_entries")
+    .select("id, account_id, direction, amount, asset_ticker")
+    .eq("transaction_id", tx.id);
+
+  // Resolve accounts to identify user entry
+  const acctIds = (entries || []).map((e: any) => e.account_id);
+  const { data: accounts } = await adminSupabase
+    .from("ledger_accounts")
+    .select("id, account_type, user_id, asset_ticker")
+    .in("id", acctIds.length > 0 ? acctIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const acctMap = new Map((accounts || []).map((a: any) => [a.id, a]));
+  const userEntry = (entries || []).find((e: any) => acctMap.get(e.account_id)?.account_type === "USER_AVAILABLE");
+  const userAcct = userEntry ? acctMap.get(userEntry.account_id) : null;
+
   const oldStatus = tx.status;
   let newStatus = input.status ? input.status.toUpperCase() : oldStatus;
   if (newStatus === "COMPLETED") newStatus = "POSTED";
 
-  const userEntry = tx.entries?.find((e: any) => e.account?.account_type === "USER_AVAILABLE");
   const oldAmount = userEntry ? parseFloat(userEntry.amount) : 0;
   const newAmount = input.amount !== undefined ? parseFloat(input.amount) : oldAmount;
 
@@ -386,13 +423,15 @@ export async function adminUpdateTransaction(
   }
 
   // 2. Adjust wallet balance if status or amount changed
-  if (userEntry) {
+  if (userEntry && userAcct) {
     const userAcctId = userEntry.account_id;
+    const targetUserId = userAcct.user_id;
+    const assetTicker = userEntry.asset_ticker;
     const direction = userEntry.direction; // 'CREDIT' or 'DEBIT'
 
     const { data: wb } = await adminSupabase
       .from("wallet_balances")
-      .select("available_balance")
+      .select("available_balance, reserved_balance, pending_balance")
       .eq("account_id", userAcctId)
       .maybeSingle();
 
@@ -412,14 +451,22 @@ export async function adminUpdateTransaction(
       bal = direction === "CREDIT" ? Math.max(0, bal + delta) : Math.max(0, bal - delta);
     }
 
-    if (wb) {
-      await adminSupabase
-        .from("wallet_balances")
-        .update({ available_balance: bal, updated_at: new Date().toISOString() })
-        .eq("account_id", userAcctId);
-    }
+    await adminSupabase
+      .from("wallet_balances")
+      .upsert(
+        {
+          account_id: userAcctId,
+          user_id: targetUserId,
+          asset_ticker: assetTicker,
+          available_balance: bal,
+          reserved_balance: wb?.reserved_balance || 0,
+          pending_balance: wb?.pending_balance || 0,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "account_id" }
+      );
 
-    // Update amount on ledger entries if amount changed
+    // Update amount on all ledger entries of this transaction if amount changed
     if (oldAmount !== newAmount) {
       await adminSupabase
         .from("ledger_entries")
@@ -491,10 +538,10 @@ export async function adminDeleteTransaction(
 ): Promise<{ success: boolean }> {
   const adminSupabase = createAdminClient();
 
-  // 1. Fetch transaction and entries
+  // 1. Fetch transaction and entries cleanly
   const { data: tx, error: txErr } = await adminSupabase
     .from("ledger_transactions")
-    .select("*, entries:ledger_entries(*, account:account_id(user_id, account_type))")
+    .select("*")
     .eq("id", input.transactionId)
     .maybeSingle();
 
@@ -502,29 +549,50 @@ export async function adminDeleteTransaction(
     throw new AppError("Transaction not found", "TRANSACTION_NOT_FOUND", 404);
   }
 
+  const { data: entries } = await adminSupabase
+    .from("ledger_entries")
+    .select("id, account_id, direction, amount, asset_ticker")
+    .eq("transaction_id", tx.id);
+
+  const acctIds = (entries || []).map((e: any) => e.account_id);
+  const { data: accounts } = await adminSupabase
+    .from("ledger_accounts")
+    .select("id, account_type, user_id, asset_ticker")
+    .in("id", acctIds.length > 0 ? acctIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const acctMap = new Map((accounts || []).map((a: any) => [a.id, a]));
+  const userEntry = (entries || []).find((e: any) => acctMap.get(e.account_id)?.account_type === "USER_AVAILABLE");
+  const userAcct = userEntry ? acctMap.get(userEntry.account_id) : null;
+
   // 2. If status was POSTED, revert user's wallet_balance
-  if (tx.status === "POSTED") {
-    const userEntry = tx.entries?.find((e: any) => e.account?.account_type === "USER_AVAILABLE");
-    if (userEntry) {
-      const amount = parseFloat(userEntry.amount);
-      const direction = userEntry.direction;
-      const userAcctId = userEntry.account_id;
+  if (tx.status === "POSTED" && userEntry && userAcct) {
+    const amount = parseFloat(userEntry.amount);
+    const direction = userEntry.direction;
+    const userAcctId = userEntry.account_id;
 
-      const { data: wb } = await adminSupabase
-        .from("wallet_balances")
-        .select("available_balance")
-        .eq("account_id", userAcctId)
-        .maybeSingle();
+    const { data: wb } = await adminSupabase
+      .from("wallet_balances")
+      .select("available_balance, reserved_balance, pending_balance")
+      .eq("account_id", userAcctId)
+      .maybeSingle();
 
-      if (wb) {
-        const cur = parseFloat(wb.available_balance || "0");
-        const next = direction === "CREDIT" ? Math.max(0, cur - amount) : cur + amount;
-        await adminSupabase
-          .from("wallet_balances")
-          .update({ available_balance: next, updated_at: new Date().toISOString() })
-          .eq("account_id", userAcctId);
-      }
-    }
+    const cur = parseFloat(wb?.available_balance || "0");
+    const next = direction === "CREDIT" ? Math.max(0, cur - amount) : cur + amount;
+
+    await adminSupabase
+      .from("wallet_balances")
+      .upsert(
+        {
+          account_id: userAcctId,
+          user_id: userAcct.user_id,
+          asset_ticker: userEntry.asset_ticker,
+          available_balance: next,
+          reserved_balance: wb?.reserved_balance || 0,
+          pending_balance: wb?.pending_balance || 0,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "account_id" }
+      );
   }
 
   // 3. Nullify any foreign key references from peripheral tables

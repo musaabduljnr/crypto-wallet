@@ -79,22 +79,66 @@ export class LedgerService {
 
     if (error) {
       logger.error("Failed to query user wallet balances", { userId, error });
-      // Fallback: return default zero balances if tables haven't been seeded for new user
-      return this.getDefaultZeroBalances();
     }
 
     const balances: Record<string, AccountBalance> = this.getDefaultZeroBalances();
 
+    let hasNonZero = false;
     if (data && data.length > 0) {
       for (const row of data) {
-        balances[row.asset_ticker] = {
-          assetTicker: row.asset_ticker,
-          availableBalance: String(row.available_balance || "0"),
-          reservedBalance: String(row.reserved_balance || "0"),
-          pendingBalance: String(row.pending_balance || "0"),
-          updatedAt: row.updated_at,
-        };
+        if (balances[row.asset_ticker]) {
+          balances[row.asset_ticker] = {
+            assetTicker: row.asset_ticker,
+            availableBalance: String(row.available_balance || "0"),
+            reservedBalance: String(row.reserved_balance || "0"),
+            pendingBalance: String(row.pending_balance || "0"),
+            updatedAt: row.updated_at,
+          };
+          if (parseFloat(row.available_balance || "0") > 0) {
+            hasNonZero = true;
+          }
+        }
       }
+    }
+
+    // Ledger self-healing & fallback: if wallet_balances has no rows or is missing balances,
+    // verify against actual posted ledger_entries for this user's USER_AVAILABLE accounts
+    try {
+      const { data: userAccounts } = await supabase
+        .from("ledger_accounts")
+        .select("id, asset_ticker")
+        .eq("user_id", userId)
+        .eq("account_type", "USER_AVAILABLE");
+
+      if (userAccounts && userAccounts.length > 0) {
+        const acctIds = userAccounts.map((a: any) => a.id);
+        const { data: entries } = await supabase
+          .from("ledger_entries")
+          .select("account_id, asset_ticker, direction, amount, transaction:ledger_transactions!inner(status)")
+          .in("account_id", acctIds)
+          .eq("transaction.status", "POSTED");
+
+        if (entries && entries.length > 0) {
+          const calculated: Record<string, number> = {};
+          for (const e of entries) {
+            const ticker = e.asset_ticker;
+            const amt = parseFloat(e.amount) || 0;
+            const cur = calculated[ticker] || 0;
+            calculated[ticker] = e.direction === "CREDIT" ? cur + amt : Math.max(0, cur - amt);
+          }
+
+          for (const [ticker, val] of Object.entries(calculated)) {
+            if (balances[ticker]) {
+              // If cached balance was 0 but ledger has non-zero entries, adopt authoritative ledger value
+              if (parseFloat(balances[ticker].availableBalance) === 0 && val > 0) {
+                balances[ticker].availableBalance = String(val);
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn("Ledger balance verification encountered non-fatal error", { userId, err });
     }
 
     return balances;
@@ -230,6 +274,19 @@ export class LedgerService {
     const supabase = await createServerClient();
     const limit = options.limit || 20;
 
+    // 1. Resolve user's ledger accounts to query entries cleanly
+    const { data: userAccounts, error: acctErr } = await supabase
+      .from("ledger_accounts")
+      .select("id")
+      .eq("user_id", userId);
+
+    if (acctErr || !userAccounts || userAccounts.length === 0) {
+      return { transactions: [], totalCount: 0 };
+    }
+
+    const accountIds = userAccounts.map((a: any) => a.id);
+
+    // 2. Query ledger entries belonging to the user's accounts
     let query = supabase
       .from("ledger_entries")
       .select(`
@@ -238,10 +295,9 @@ export class LedgerService {
         amount,
         asset_ticker,
         created_at,
-        transaction:ledger_transactions(id, transaction_type, status, reference_id, external_provider_ref),
-        account:ledger_accounts(account_type, user_id)
+        transaction:ledger_transactions(id, transaction_type, status, reference_id, external_provider_ref)
       `, { count: "exact" })
-      .eq("account.user_id", userId)
+      .in("account_id", accountIds)
       .order("created_at", { ascending: false });
 
     if (options.asset && options.asset !== "ALL") {

@@ -15,6 +15,7 @@ import {
   updateAdminUserProfileAction,
   liftRestrictionAction,
   requestBalanceAdjustmentAction,
+  directBalanceAdjustmentAction,
   adminCreateTransactionAction,
   adminUpdateTransactionAction,
   adminDeleteTransactionAction,
@@ -33,6 +34,7 @@ import {
   X,
   ArrowRight,
   AlertCircle,
+  Zap,
 } from "lucide-react";
 
 export function UserDetailClient({ user }: { user: AdminUserDetails }) {
@@ -58,6 +60,7 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
   const [adjAmount, setAdjAmount] = useState("");
   const [adjReason, setAdjReason] = useState("ACCOUNTING_CORRECTION");
   const [adjJustification, setAdjJustification] = useState("");
+  const [adjExecutionMode, setAdjExecutionMode] = useState<"DIRECT" | "QUEUE">("DIRECT");
   const [submittingAdj, setSubmittingAdj] = useState(false);
   const [adjMsg, setAdjMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -237,25 +240,50 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
     setSubmittingAdj(true);
     setAdjMsg(null);
 
-    const res = await requestBalanceAdjustmentAction({
-      userId: user.id,
-      assetTicker: adjAsset,
-      direction: adjDirection,
-      amount: adjAmount,
-      reasonCategory: adjReason,
-      justification: adjJustification.trim(),
-    });
-
-    setSubmittingAdj(false);
-    if (res.success) {
-      setAdjMsg({
-        type: "success",
-        text: "Adjustment request submitted successfully to the Maker-Checker queue. Awaiting secondary approval.",
+    if (adjExecutionMode === "DIRECT") {
+      const res = await directBalanceAdjustmentAction({
+        userId: user.id,
+        assetTicker: adjAsset,
+        direction: adjDirection,
+        amount: adjAmount,
+        reasonCategory: adjReason,
+        justification: adjJustification.trim(),
       });
-      setAdjAmount("");
-      setAdjJustification("");
+
+      setSubmittingAdj(false);
+      if (res.success) {
+        const data = res.data as any;
+        setAdjMsg({
+          type: "success",
+          text: `Balance adjusted successfully! New balance of ${data?.newBalance || adjAmount} ${adjAsset} is active and posted to user ledger.`,
+        });
+        setAdjAmount("");
+        setAdjJustification("");
+        router.refresh();
+      } else {
+        setAdjMsg({ type: "error", text: res.error || "Adjustment failed." });
+      }
     } else {
-      setAdjMsg({ type: "error", text: res.error || "Submission failed." });
+      const res = await requestBalanceAdjustmentAction({
+        userId: user.id,
+        assetTicker: adjAsset,
+        direction: adjDirection,
+        amount: adjAmount,
+        reasonCategory: adjReason,
+        justification: adjJustification.trim(),
+      });
+
+      setSubmittingAdj(false);
+      if (res.success) {
+        setAdjMsg({
+          type: "success",
+          text: "Adjustment request submitted successfully to the Maker-Checker queue. Awaiting secondary approval.",
+        });
+        setAdjAmount("");
+        setAdjJustification("");
+      } else {
+        setAdjMsg({ type: "error", text: res.error || "Submission failed." });
+      }
     }
   };
 
@@ -548,22 +576,60 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
         </Card>
       )}
 
-      {/* TAB 4: REQUEST BALANCE ADJUSTMENT (Maker-Checker) */}
+      {/* TAB 4: BALANCE ADJUSTMENT */}
       {activeTab === "adjust" && (
         <Card className="max-w-xl shadow-xs">
           <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-semibold flex items-center space-x-2">
               <SlidersHorizontal className="h-4 w-4 text-primary" />
-              <span>Request Ledger-Safe Balance Adjustment</span>
+              <span>Institutional Wallet Balance Adjustment</span>
             </CardTitle>
           </CardHeader>
           <form onSubmit={handleRequestAdjustment}>
             <CardContent className="space-y-4 pt-4">
               {adjMsg && (
-                <InlineNotice variant={adjMsg.type === "success" ? "success" : "destructive"} title={adjMsg.type === "success" ? "Submitted" : "Error"}>
+                <InlineNotice variant={adjMsg.type === "success" ? "success" : "destructive"} title={adjMsg.type === "success" ? "Success" : "Error"}>
                   {adjMsg.text}
                 </InlineNotice>
               )}
+
+              {/* Execution Mode Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground block">Execution Mode</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdjExecutionMode("DIRECT")}
+                    className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                      adjExecutionMode === "DIRECT"
+                        ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center space-x-1.5">
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Instant Ledger Post</span>
+                    </div>
+                    <span className="text-[10px] opacity-80 block mt-0.5">Immediately updates balance & user ledger</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAdjExecutionMode("QUEUE")}
+                    className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                      adjExecutionMode === "QUEUE"
+                        ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center space-x-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Maker-Checker Queue</span>
+                    </div>
+                    <span className="text-[10px] opacity-80 block mt-0.5">Submit for secondary admin review</span>
+                  </button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -573,7 +639,7 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
                     onChange={(e) => setAdjAsset(e.target.value)}
                     className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-primary"
                   >
-                    {["USDT", "USDC", "BTC", "ETH", "SOL", "USD"].map((t) => (
+                    {["USD", "USDT", "USDC", "BTC", "ETH", "SOL"].map((t) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
@@ -594,7 +660,8 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
 
               <Input
                 label="Adjustment Amount"
-                type="text"
+                type="number"
+                step="any"
                 placeholder="0.00"
                 value={adjAmount}
                 onChange={(e) => setAdjAmount(e.target.value)}
@@ -630,14 +697,18 @@ export function UserDetailClient({ user }: { user: AdminUserDetails }) {
               </div>
 
               <div className="p-3 rounded-xl border border-border bg-muted/20 text-[11px] text-muted-foreground space-y-1">
-                <span className="font-semibold text-foreground block">Maker-Checker Notice:</span>
+                <span className="font-semibold text-foreground block">
+                  {adjExecutionMode === "DIRECT" ? "Instant Settlement Notice:" : "Maker-Checker Notice:"}
+                </span>
                 <p>
-                  Submitting this request will place it into the pending queue. A separate authorized staff member must review and approve it before the double-entry ledger settlement is posted.
+                  {adjExecutionMode === "DIRECT"
+                    ? "Applying this adjustment will immediately credit or debit the customer's available balance in the database and create a permanent double-entry ledger journal record."
+                    : "Submitting this request will place it into the pending queue. A separate authorized staff member must review and approve it before the double-entry ledger settlement is posted."}
                 </p>
               </div>
 
               <Button type="submit" size="sm" className="w-full" isLoading={submittingAdj}>
-                Submit Adjustment Request
+                {adjExecutionMode === "DIRECT" ? "Apply Balance Adjustment Now" : "Submit Adjustment Request"}
               </Button>
             </CardContent>
           </form>

@@ -215,7 +215,9 @@ export default async function DashboardPage() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-foreground">
-                        {tx.transactionType.replace("_", " ")}
+                        {tx.transactionType === "SYSTEM_RECONCILIATION"
+                          ? "Balance Adjustment"
+                          : tx.transactionType.replace(/_/g, " ")}
                       </div>
                       <div className="text-xs text-muted-foreground font-mono">
                         Ref: {tx.referenceId}

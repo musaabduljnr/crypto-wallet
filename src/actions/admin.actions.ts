@@ -10,6 +10,7 @@ import {
 import {
   requestBalanceAdjustment,
   reviewBalanceAdjustment,
+  directBalanceAdjustment,
   AdjustmentDirection,
 } from "@/lib/admin/adjustments";
 import {
@@ -26,6 +27,33 @@ export interface AdminActionResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+/**
+ * Revalidates all customer-facing and admin financial views across the application.
+ */
+function revalidateFinancialPaths(userId?: string, txId?: string) {
+  try {
+    revalidatePath("/dashboard");
+    revalidatePath("/history");
+    revalidatePath("/transfer");
+    revalidatePath("/withdraw");
+    revalidatePath("/swap");
+    revalidatePath("/receive");
+    revalidatePath("/", "layout");
+    revalidatePath("/admin/transactions");
+    revalidatePath("/admin/balance-adjustments");
+    revalidatePath("/admin/operations");
+    revalidatePath("/admin");
+    if (userId) {
+      revalidatePath(`/admin/users/${userId}`);
+    }
+    if (txId) {
+      revalidatePath(`/admin/transactions/${txId}`);
+    }
+  } catch (err) {
+    // Non-fatal if called outside request lifecycle
+  }
 }
 
 /**
@@ -83,8 +111,7 @@ export async function requestBalanceAdjustmentAction(params: {
   try {
     const staff = await requireStaffPermission("balances.adjust.request");
     const result = await requestBalanceAdjustment(staff, params);
-    revalidatePath("/admin/balance-adjustments");
-    revalidatePath(`/admin/users/${params.userId}`);
+    revalidateFinancialPaths(params.userId);
     return { success: true, data: result };
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to submit adjustment request" };
@@ -98,14 +125,37 @@ export async function reviewBalanceAdjustmentAction(params: {
   adjustmentId: string;
   decision: "APPROVE" | "REJECT";
   rejectionReason?: string;
+  userId?: string;
 }): Promise<AdminActionResponse> {
   try {
     const staff = await requireStaffPermission("balances.adjust.approve");
     const result = await reviewBalanceAdjustment(staff, params);
-    revalidatePath("/admin/balance-adjustments");
+    revalidateFinancialPaths(params.userId);
     return { success: true, data: result };
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to review adjustment" };
+  }
+}
+
+/**
+ * Executes an instant, ledger-safe direct balance adjustment for a user.
+ */
+export async function directBalanceAdjustmentAction(params: {
+  userId: string;
+  assetTicker: string;
+  direction: AdjustmentDirection;
+  amount: string;
+  reasonCategory: string;
+  justification: string;
+  referenceCase?: string;
+}): Promise<AdminActionResponse> {
+  try {
+    const staff = await requireStaffPermission("balances.adjust.request");
+    const result = await directBalanceAdjustment(staff, params);
+    revalidateFinancialPaths(params.userId, result.ledgerTxId);
+    return { success: true, data: result };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to execute balance adjustment" };
   }
 }
 
@@ -316,9 +366,7 @@ export async function adminCreateTransactionAction(params: {
     const staff = await requireStaffPermission("transactions.manage");
     const { adminCreateTransaction } = await import("@/lib/admin/transactions");
     const result = await adminCreateTransaction(staff, params);
-    revalidatePath("/admin/transactions");
-    revalidatePath(`/admin/users/${params.userId}`);
-    revalidatePath("/admin");
+    revalidateFinancialPaths(params.userId, result.id);
     return { success: true, data: result };
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to create transaction" };
@@ -342,10 +390,7 @@ export async function adminUpdateTransactionAction(params: {
     const staff = await requireStaffPermission("transactions.manage");
     const { adminUpdateTransaction } = await import("@/lib/admin/transactions");
     const result = await adminUpdateTransaction(staff, params);
-    revalidatePath("/admin/transactions");
-    revalidatePath(`/admin/transactions/${params.transactionId}`);
-    if (params.userId) revalidatePath(`/admin/users/${params.userId}`);
-    revalidatePath("/admin");
+    revalidateFinancialPaths(params.userId, params.transactionId);
     return { success: true, data: result };
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to update transaction" };
@@ -364,9 +409,7 @@ export async function adminDeleteTransactionAction(params: {
     const staff = await requireStaffPermission("transactions.manage");
     const { adminDeleteTransaction } = await import("@/lib/admin/transactions");
     const result = await adminDeleteTransaction(staff, params);
-    revalidatePath("/admin/transactions");
-    if (params.userId) revalidatePath(`/admin/users/${params.userId}`);
-    revalidatePath("/admin");
+    revalidateFinancialPaths(params.userId, params.transactionId);
     return { success: true, data: result };
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to delete transaction" };

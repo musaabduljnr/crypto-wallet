@@ -23,10 +23,12 @@ export function BalanceAdjustmentsClient({
   adjustments: initialAdjustments,
   currentStaffId,
   canApprove,
+  isSuperAdmin,
 }: {
   adjustments: BalanceAdjustmentRecord[];
   currentStaffId: string;
   canApprove: boolean;
+  isSuperAdmin?: boolean;
 }) {
   const [adjustments, setAdjustments] = useState<BalanceAdjustmentRecord[]>(initialAdjustments);
   const [selectedAdj, setSelectedAdj] = useState<BalanceAdjustmentRecord | null>(null);
@@ -48,6 +50,7 @@ export function BalanceAdjustmentsClient({
       adjustmentId: selectedAdj.id,
       decision,
       rejectionReason: decision === "REJECT" ? rejectionReason.trim() : undefined,
+      userId: selectedAdj.userId,
     });
 
     setProcessing(false);
@@ -157,7 +160,7 @@ export function BalanceAdjustmentsClient({
               </div>
 
               {/* Invariant Check Notice */}
-              {selectedAdj.requestedBy === currentStaffId ? (
+              {selectedAdj.requestedBy === currentStaffId && !isSuperAdmin ? (
                 <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive flex items-start space-x-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
@@ -169,6 +172,17 @@ export function BalanceAdjustmentsClient({
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {selectedAdj.requestedBy === currentStaffId && isSuperAdmin && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-start space-x-2">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">Super Admin Self-Approval Override</p>
+                        <p className="text-[11px] opacity-90 mt-0.5">
+                          You initiated this request. As Super Admin you may override the maker-checker rule, but this action is fully audited.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-muted-foreground">
                     Approving this request will atomically post a double-entry journal entry between the platform reconciliation clearing account and the user&apos;s available ledger account.
                   </p>
@@ -197,7 +211,7 @@ export function BalanceAdjustmentsClient({
                 >
                   Cancel
                 </Button>
-                {selectedAdj.requestedBy !== currentStaffId && canApprove && (
+                {(selectedAdj.requestedBy !== currentStaffId || isSuperAdmin) && canApprove && (
                   <>
                     <Button
                       variant="destructive"

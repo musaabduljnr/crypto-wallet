@@ -90,6 +90,7 @@ export default async function AdminBalanceAdjustmentsPage({
         adjustments={adjustments}
         currentStaffId={staff.id}
         canApprove={canApprove}
+        isSuperAdmin={staff.role === "super_admin"}
       />
     </div>
   );

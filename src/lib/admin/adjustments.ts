@@ -422,7 +422,9 @@ export async function reviewBalanceAdjustment(
 
   // 3. Approval: Settle via double-entry ledger stored procedure or direct ledger settlement
   let ledgerTxId: string | null = null;
+  const nowIso = new Date().toISOString();
 
+  // Attempt RPC settlement when reviewer is a different staff member
   if (record.requested_by !== staff.id) {
     const { data: txId, error: settleErr } = await supabase.rpc("settle_approved_balance_adjustment", {
       p_adjustment_id: input.adjustmentId,
@@ -433,11 +435,10 @@ export async function reviewBalanceAdjustment(
     }
   }
 
-  // If RPC was skipped due to super_admin self-approval override or RPC returned an error, execute atomic settlement in TS
+  // If RPC was skipped (super_admin self-approval) or RPC failed, execute atomic settlement in TS
   if (!ledgerTxId) {
     const ticker = record.asset_ticker;
     const amountNum = parseFloat(record.amount);
-    const nowIso = new Date().toISOString();
     const refId = `ADJ-${ticker}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
     const { data: userAcctId } = await supabase.rpc("get_or_create_user_account", {
@@ -524,17 +525,19 @@ export async function reviewBalanceAdjustment(
         },
         { onConflict: "account_id" }
       );
-
-    await supabase
-      .from("balance_adjustments")
-      .update({
-        status: "POSTED",
-        reviewed_by: staff.id,
-        reviewed_at: nowIso,
-        ledger_transaction_id: tx.id,
-      })
-      .eq("id", record.id);
   }
+
+  // Always update the balance_adjustments record to POSTED after successful settlement
+  // (both RPC and TS fallback paths)
+  await supabase
+    .from("balance_adjustments")
+    .update({
+      status: "POSTED",
+      reviewed_by: staff.id,
+      reviewed_at: nowIso,
+      ledger_transaction_id: ledgerTxId,
+    })
+    .eq("id", record.id);
 
   await recordAdminAuditLog({
     actorId: staff.id,

@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { AppError } from "@/lib/errors";
 
@@ -67,9 +67,10 @@ export class LedgerService {
 
   /**
    * Fetches authoritative user balances across all supported assets.
+   * Accepts an optional client (e.g. createAdminClient()) to bypass RLS when called from admin contexts.
    */
-  async getUserBalances(userId: string): Promise<Record<string, AccountBalance>> {
-    const supabase = await createServerClient();
+  async getUserBalances(userId: string, client?: any): Promise<Record<string, AccountBalance>> {
+    const supabase = client || (await createServerClient());
 
     // Query wallet_balances joined with supported_assets
     const { data, error } = await supabase
@@ -145,7 +146,14 @@ export class LedgerService {
   }
 
   /**
-   * Credits a verified fiat deposit via double-entry accounting.
+   * Fetches authoritative user balances across all supported assets using the
+   * service-role (admin) Supabase client, bypassing RLS.
+   */
+  async adminGetUserBalances(userId: string): Promise<Record<string, AccountBalance>> {
+    return this.getUserBalances(userId, createAdminClient());
+  }
+
+  /**
    * Atomic balance update:
    *   DEBIT  FIAT_CLEARING (System Asset)
    *   CREDIT USER_AVAILABLE (User Liability)
@@ -252,10 +260,18 @@ export class LedgerService {
 
   /**
    * Fetches recent transactions for a user directly from immutable ledger entries.
+   * Accepts an optional client (e.g. createAdminClient()) to bypass RLS when called from admin contexts.
    */
-  async getUserTransactions(userId: string, limit: number = 20): Promise<LedgerTransactionSummary[]> {
-    const res = await this.getUserTransactionsFiltered(userId, { limit });
+  async getUserTransactions(userId: string, limit: number = 20, client?: any): Promise<LedgerTransactionSummary[]> {
+    const res = await this.getUserTransactionsFiltered(userId, { limit }, client);
     return res.transactions;
+  }
+
+  /**
+   * Fetches recent transactions for a user using the service-role (admin) client to bypass RLS.
+   */
+  async adminGetUserTransactions(userId: string, limit: number = 20): Promise<LedgerTransactionSummary[]> {
+    return this.getUserTransactions(userId, limit, createAdminClient());
   }
 
   /**
@@ -269,9 +285,10 @@ export class LedgerService {
       searchQuery?: string;
       limit?: number;
       offset?: number;
-    } = {}
+    } = {},
+    client?: any
   ): Promise<{ transactions: LedgerTransactionSummary[]; totalCount: number }> {
-    const supabase = await createServerClient();
+    const supabase = client || (await createServerClient());
     const limit = options.limit || 20;
 
     // 1. Resolve user's ledger accounts to query entries cleanly

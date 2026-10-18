@@ -157,12 +157,30 @@ export async function getAdminUserDetails(userId: string): Promise<AdminUserDeta
     supabase.auth.admin.getUserById(userId)
   ]);
 
-  if (profileErr || !profile) {
+  let userProfile = profile;
+  if (!userProfile && authUser?.user) {
+    const meta = authUser.user.user_metadata || {};
+    const fallbackProfile = {
+      id: userId,
+      first_name: meta.first_name || "User",
+      last_name: meta.last_name || "",
+      phone_number: meta.phone_number || "",
+      state_of_residence: meta.state_of_residence || null,
+      kyc_tier: 1,
+      preferred_currency: "USD",
+      created_at: authUser.user.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    await supabase.from("user_profiles").upsert(fallbackProfile, { onConflict: "id", ignoreDuplicates: true });
+    userProfile = fallbackProfile as any;
+  }
+
+  if (!userProfile) {
     throw new AppError("User not found", "USER_NOT_FOUND", 404);
   }
 
-  // 2. Balances across all supported assets via double-entry ledger
-  const rawBalances = await ledgerService.getUserBalances(userId);
+  // 2. Balances across all supported assets via double-entry ledger (bypassing RLS with admin client)
+  const rawBalances = await ledgerService.adminGetUserBalances(userId);
   const balances: Record<string, { available: string; reserved: string; pending: string }> = {};
   for (const [ticker, b] of Object.entries(rawBalances)) {
     balances[ticker] = {
@@ -175,23 +193,23 @@ export async function getAdminUserDetails(userId: string): Promise<AdminUserDeta
   // 3. Active restrictions
   const restrictions = await getUserRestrictions(userId);
 
-  // 4. Recent ledger transactions
-  const transactions = await ledgerService.getUserTransactions(userId, 20);
+  // 4. Recent ledger transactions (bypassing RLS with admin client)
+  const transactions = await ledgerService.adminGetUserTransactions(userId, 20);
 
   // 5. Admin notes
   const notes = await getAdminNotes("USER", userId);
 
   return {
-    id: profile.id,
+    id: userProfile.id,
     email: authUser?.user?.email || "user@apexwallet.io",
-    firstName: profile.first_name,
-    lastName: profile.last_name,
-    phoneNumber: profile.phone_number,
-    stateOfResidence: profile.state_of_residence,
-    kycTier: profile.kyc_tier,
-    preferredCurrency: profile.preferred_currency,
-    createdAt: profile.created_at,
-    updatedAt: profile.updated_at,
+    firstName: userProfile.first_name,
+    lastName: userProfile.last_name,
+    phoneNumber: userProfile.phone_number,
+    stateOfResidence: userProfile.state_of_residence,
+    kycTier: userProfile.kyc_tier,
+    preferredCurrency: userProfile.preferred_currency,
+    createdAt: userProfile.created_at,
+    updatedAt: userProfile.updated_at,
     balances,
     restrictions,
     transactions,

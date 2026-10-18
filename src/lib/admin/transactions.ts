@@ -189,16 +189,23 @@ export async function adminCreateTransaction(
 
   const adminSupabase = createAdminClient();
 
-  // 1. Verify target user profile exists
-  const { data: userProfile, error: uErr } = await adminSupabase
-    .from("user_profiles")
-    .select("id")
-    .eq("id", input.userId)
-    .maybeSingle();
+  // 1. Verify target user exists in auth (authoritative source of truth)
+  const { data: targetAuthUser, error: uErr } = await adminSupabase.auth.admin.getUserById(input.userId);
 
-  if (uErr || !userProfile) {
+  if (uErr || !targetAuthUser?.user) {
     throw new AppError("Target user not found", "USER_NOT_FOUND", 404);
   }
+
+  // Ensure user_profiles row exists (may be missing for users created outside signup flow)
+  await adminSupabase.from("user_profiles").upsert(
+    {
+      id: input.userId,
+      first_name: targetAuthUser.user.user_metadata?.first_name || "User",
+      last_name: targetAuthUser.user.user_metadata?.last_name || "",
+      phone_number: targetAuthUser.user.user_metadata?.phone_number || "",
+    },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
 
   // 2. Resolve or create user ledger account
   const { data: userAcctId, error: userAcctErr } = await adminSupabase.rpc(

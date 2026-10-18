@@ -65,14 +65,10 @@ export async function requestBalanceAdjustment(
 
   const supabase = createAdminClient();
 
-  // Verify target user exists
-  const { data: targetUser, error: userErr } = await supabase
-    .from("user_profiles")
-    .select("id")
-    .eq("id", input.userId)
-    .maybeSingle();
+  // Verify target user exists in auth (authoritative source of truth)
+  const { data: targetAuthUser, error: userErr } = await supabase.auth.admin.getUserById(input.userId);
 
-  if (userErr || !targetUser) {
+  if (userErr || !targetAuthUser?.user) {
     throw new AppError("Target user not found", "USER_NOT_FOUND", 404);
   }
 
@@ -170,16 +166,23 @@ export async function directBalanceAdjustment(
 
   const supabase = createAdminClient();
 
-  // 1. Verify target user profile exists
-  const { data: targetUser, error: userErr } = await supabase
-    .from("user_profiles")
-    .select("id, email")
-    .eq("id", input.userId)
-    .maybeSingle();
+  // 1. Verify target user exists in auth (authoritative source of truth)
+  const { data: targetAuthUser, error: userErr } = await supabase.auth.admin.getUserById(input.userId);
 
-  if (userErr || !targetUser) {
+  if (userErr || !targetAuthUser?.user) {
     throw new AppError("Target user not found", "USER_NOT_FOUND", 404);
   }
+
+  // Ensure user_profiles row exists (may be missing for users created outside the signup flow)
+  await supabase.from("user_profiles").upsert(
+    {
+      id: input.userId,
+      first_name: targetAuthUser.user.user_metadata?.first_name || "User",
+      last_name: targetAuthUser.user.user_metadata?.last_name || "",
+      phone_number: targetAuthUser.user.user_metadata?.phone_number || "",
+    },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
 
   // 2. Resolve or create user ledger account
   const { data: userAcctId, error: userAcctErr } = await supabase.rpc(
